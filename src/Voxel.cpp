@@ -1,0 +1,1918 @@
+//
+// Created by Brian Howell on 8/24/22.
+//
+
+/*
+ *
+ *   CURRENTLY WORKING ON:
+ *      - figure out what is going on with k_i and k_t
+ *      - use switch for time stepping scheme
+ *      - move things to the heap
+ *      - add toggle for neumann bcs on heat equations
+ *      - fix initialization of concentrations with std::fill
+ *      - fix paraview output file
+ *
+ */
+#include "Voxel.h"
+
+// overload constructor
+//      - sets the input variables to whatever we pass through the class.
+Voxel::Voxel(int nodes_){
+    std::cout << "Initializing parameters: " << std::endl;
+
+    // MEMBER VARIABLES
+    // representative volume element RVE simulation parameters
+    nodes = nodes_;                                             // | unitless|  total number of nodes
+//    t_final = t_final_;                                         // |    s    |  final simulation time
+//    dt = dt_;                                                   // |    s    |  time step discretization
+
+    interfacial_nodes = 1;                                      // |   ---   |  interfacial thickness parameter
+    len_block = 0.00084;                                        // |    m    |  sample length
+    h = (double) len_block / (nodes - 1);                       // |    m    |  spatial discretization
+    N_VOL_NODES = nodes * nodes * nodes;                        // | unitless|  total number of nodes in RVE
+    N_PLANE_NODES = nodes * nodes;                              // | unitless|  total number of nodes in plane of RVE
+    coord_map_const = len_block / nodes; 
+
+    // formulation - wt. percent
+    percent_PI = 0.0333;                                        // |   wt.%  | weight percent of photo initiator
+    percent_PEA = 0.15;                                         // |   wt.%  | weight percent of PEA
+    percent_HDDA = 0.0168;                                      // |   wt.%  | weight percent of HDDA
+    percent_8025D = 0.4084;                                     // |   wt.%  | weight percent of 8025D
+    percent_8025E = 0.0408;                                     // |   wt.%  | weight percent of 8025E
+    percent_E4396 = 0.3507;                                     // |   wt.%  | weight percent of HDDA
+    percent_M = percent_PEA + percent_HDDA;                     // |   wt.%  | weight percent of monomer
+
+    // physical properties
+    // densities and molecular weights
+    rho_PEA = 1020;                                             // | kg/m^3  | density of PEA (estimated)
+    rho_HDDA = 1020;                                            // | kg/m^3  | density of HDDA (estimated)
+    rho_E4396 = 1100;                                           // | kg/m^3  | density of EBECRYL 4396
+    rho_M = 0.899 * rho_PEA + 0.101 * rho_HDDA;                 // | kg/m^3  | weighted average density of monomer
+    rho_P = 0.03 * rho_HDDA + 0.29 * rho_PEA + 0.68 * rho_E4396;// | kg/m^3  | weighted average density of polymer
+    // rho_P = rho_E4396                                        // | kg/m^3  | weighted average density of polymer
+    rho_UGAP = 1840;                                            // | kg/m^3  | estimated density of UGAP
+    rho_nacl = 2170;                                            // | kg/m^3  | estimated density of NaCl
+
+    mw_PEA = 0.19221;                                           // |  kg/mol | molecular weight of PEA
+    mw_HDDA = 0.226;                                            // |  kg/mol | molecular weight of HDDA
+    mw_M = 0.899 * mw_PEA + 0.101 * mw_HDDA;                    // |  kg/mol | weighted average molecular weight of monomer
+    mw_PI = 0.4185;                                             // |  kg/mol | molecular weight of photo initiator
+//    mw_M = mw_PEA;
+
+    basis_wt = 0.5;                                             // |   kg    | arbitrary starting ink weight
+    basis_vol = basis_wt / rho_UGAP;                            // |   m^3   | arbitrary starting ink volume
+    mol_PI = basis_wt * percent_PI / mw_PI;                     // |   mol   | required PI for basis weight
+    mol_M = basis_wt * percent_M / mw_M;                        // |   mol   | required monomer for basis weight
+    c_M0 = mol_M / basis_vol;                                   // | mol/m^3 | initial concentration of monomer
+    c_PI0 = mol_PI / basis_vol;                                 // | mol/m^3 | initial concentration of photoinitiator
+
+    // diffusion properties
+    Dm0 = 1.08e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (taki lit.)
+    Am = 0.66;                                                  // | unitless| diffusion constant parameter, monomer (shanna lit.)
+
+    // bowman reaction parameters
+    Rg = 8.3145;                                                // | J/mol K | universal gas constant
+    alpha_P = 0.000075;                                         // |   1/K   | coefficent of thermal expansion, polymerization (taki + bowman lit.)
+    alpha_M = 0.0005;                                           // |   1/K   | coefficent of thermal expansion, monomer (taki + bowman lit.)
+    theta_gP = 236.75;                                          // |    K    | glass transition temperature, polymer UGAP (measured TgA)
+    theta_gM = 313.6;                                           // |    K    | glass transition temperature, monomer (Taki lit.)
+    k_P0 = 1.145e2;                                             // |m^3/mol s| true kinetic constant, polymerization (taki lit.)
+    E_P = 10.23e3;                                              // |  J/mol  | activation energy, polymerization (lit.)
+    A_Dp = 0.05;                                                // | unitless| diffusion parameter, polymerization (lit.)
+    f_cp = 5.17e-2;                                             // | unitless| critical free volume, polymerization (lit.)
+    k_T0 = 1.337e3;                                             // |m^3/mol s| true kinetic constant, termination (taki lit.)
+    E_T = 2.94e3;                                               // |  J/mol  | activation energy, termination (bowman lit.)
+    A_Dt = 1.2;                                                 // | unitless| activation energy, termination (taki lit.)
+    f_ct = 5.81e-2;                                             // | unitless| critical free volume, termination (taki lit.)
+    R_rd = 11;                                                  // |  1/mol  | reaction diffusion parameter (taki lit.)
+
+    k_i = 4.8e-5;                                               // |  s^-1   | primary radical rate constant (taki lit.)
+
+    // thermal properties
+    theta0 = 303.15;                                            // |    K    | initial and ambient temperature
+    dHp = 54.8e3;                                               // |  W/mol  | heat of polymerization of acrylate monomers
+    Cp_nacl = 880;                                              // | J/kg/K  | heat capacity of NaCl
+    Cp_pea = 180.3;                                             // | J/mol/K | heat capacity of PEA @ 298K - https://polymerdatabase.com/polymer%20physics/Cp%20Table.html
+    Cp_pea /= mw_PEA;                                           // | J/kg/K  | convert units
+    Cp_hdda = 202.9;                                            // | J/mol/K | solid heat capacity of HDDA - https://webbook.nist.gov/cgi/cbook.cgi?ID=C629118&Units=SI&Mask=1F
+    Cp_hdda /= mw_HDDA;                                         // | J/kg/K  | convert units
+    K_thermal_nacl = 0.069;                                        // | W/m/K   | thermal conductivity
+
+//    // SHANNA PARAMS
+    Cp_shanna = 1700;                                           // | J/kg/K  | shanna's heat capacity
+    K_thermal_shanna = 0.2;                                     // | W/m/K   | shanna's thermal conductivity
+//    shanna_c_PI0 = 150;                                         // | mol/m^3 | initial PI concentration
+//    shanna_c_M0 = 8250;                                         // | mol/m^3 | initial monomer concentration
+//    shanna_mw_M = 130.14e-3;                                    // | mol/kg  | mw of monomer
+//    shanna_mw_PI = 256.301e-3;                                  // | mol/kg  | mw of PI
+
+    // photo initiator properties
+    eps = 9.66e-1;                                              // |m^3/mol m| initiator absorbtivity
+    phi = 0.6;                                                  // | unitless| quantum yield inititation
+
+    // numerical method parameters: backward euler
+    tol = 5e-2;
+    thresh = 50;
+
+    // spatial discretization -> [0., h, 2*h, ..., L]
+    double z_increment = 0.0;
+    for (int i=0; i<nodes; i++){
+        z_space.push_back(z_increment);
+        z_increment += h;
+    }
+
+
+
+    /* initialize voxel values */
+
+    // UV gradient
+    std::fill_n(std::back_inserter(uv_values),     N_VOL_NODES, 0.);
+
+    // material properties
+    std::fill_n(std::back_inserter(density),       N_VOL_NODES, rho_UGAP);
+    std::fill_n(std::back_inserter(heat_capacity), N_VOL_NODES, Cp_shanna);
+    std::fill_n(std::back_inserter(therm_cond),    N_VOL_NODES, K_thermal_shanna);
+    std::fill_n(std::back_inserter(material_type), N_VOL_NODES, 1);                // UGAP=1, particle=0
+    std::fill_n(std::back_inserter(f_free_volume), N_VOL_NODES, 0.);
+
+    // concentrations
+    std::fill_n(std::back_inserter(c_PI),          N_VOL_NODES, c_PI0);
+    std::fill_n(std::back_inserter(c_M),           N_VOL_NODES, c_M0);
+    std::fill_n(std::back_inserter(c_PIdot),       N_VOL_NODES, 0.);
+    std::fill_n(std::back_inserter(c_Mdot),        N_VOL_NODES, 0.);
+    
+    // diffusion values
+    std::fill_n(std::back_inserter(diff_pdot),     N_VOL_NODES, 0.);
+    std::fill_n(std::back_inserter(diff_mdot),     N_VOL_NODES, 0.);
+    std::fill_n(std::back_inserter(diff_m)   ,     N_VOL_NODES, 0.);
+    std::fill_n(std::back_inserter(diff_theta),    N_VOL_NODES, 0.);
+
+    // temperature
+    std::fill_n(std::back_inserter(theta),         N_VOL_NODES, theta0);
+
+    // rate constants
+    std::fill_n(std::back_inserter(k_t),           N_VOL_NODES, k_T0);
+    std::fill_n(std::back_inserter(k_p),           N_VOL_NODES, k_P0);
+
+    std::cout << "==================================" << std::endl;
+
+    std::cout << "Initial concentrations (mol/m^3): " << std::endl;
+    std::cout << "c_M0: "  << c_M0   << std::endl;
+    std::cout << "c_PI0: " << c_PI0  << std::endl;
+    std::cout << "theta0 " << theta0 << std::endl;
+    std::cout << "==================================\n" << std::endl;
+
+    // initialize system
+    current_coords[0] = 0;
+    current_coords[1] = 0;
+    current_coords[2] = 0;
+
+}
+
+// Destructor
+Voxel::~Voxel() {
+}
+
+// helper functions
+double Voxel::SquaredDiff(double val_1, double val_2){
+    return (val_1 - val_2) * (val_1 - val_2);
+}
+
+
+void Voxel::UniqueVec(std::vector<int>& vec) {
+    std::sort(vec.begin(), vec.end());
+    auto last = std::unique(vec.begin(), vec.end());
+    vec.erase(last, vec.end());
+}
+
+
+void Voxel::Node2Coord(int node, int (&coord)[3]){
+    /*
+        Given a 3D cube of size m by n by p, and integer coordinates (i, j, k)
+        where 0 <= i < m, 0 <= j < n, and 0 <= k < p, the grid number can be 
+        calculated as follows:
+    */
+    coord[2] = node % nodes;    // compute k
+    int temp = node / nodes; 
+    coord[1] = temp % nodes;    // compute j
+    coord[0] = temp / nodes;    // compute i
+    
+}
+
+
+int Voxel::Coord2Node(int (&coord)[3]){
+    /*
+        Given a 3D cube of size m by n by p, and integer coordinates (i, j, k)
+        where 0 <= i < m, 0 <= j < n, and 0 <= k < p, the grid number can be 
+        calculated as follows:
+    */
+    return coord[0] * nodes * nodes + coord[1] * nodes + coord[2];
+}
+
+
+void Voxel::ComputeParticles(double radius_1, double solids_loading) {
+    /*  computeParticles - Function computes random location within Voxel for a particle.
+     *                     Adjacent nodes that fall within radius of a particle are then
+     *                     marked to be a part of the particle.
+     *
+     *  @paramVector cubeCoord - coordinates for each node
+     *
+     *  @updateVector particles_ind - vector holding total indices for each particle
+     *  @updateVector interfacial_ind - interfacial distance indices
+     *
+     */
+
+    // total number of host nodes for particles
+    double n_particle_nodes = std::round(N_VOL_NODES * solids_loading);
+    double particle_distance, node_particle, rand_loc;
+    int node;
+
+    std::cout << "\n--------- ------- ---------" << std::endl;
+    std::cout << "--- GENERATING PARTICLES ---" << std::endl;
+    std::cout << "--------- ------- ---------" << std::endl;
+    int counter1 = 0;
+    
+    int particle_coords[3] = {0, 0, 0}; 
+    int tot_part_nodes = 0; 
+    while ((tot_part_nodes < n_particle_nodes) and (counter1 < 10000000)){
+
+        // step 1: choose random node as particle
+        // https://stackoverflow.com/questions/19665818/generate-random-numbers-using-c11-random-library
+        std::random_device rd{};
+        std::mt19937  gen{rd()};
+
+
+        std::uniform_real_distribution<> dist{0, 1};
+        rand_loc = dist(gen);
+
+        // step 2: generate random seed location for particle
+        node_particle = ceil(N_VOL_NODES * rand_loc) - 1;
+        Node2Coord(node_particle, particle_coords);
+        
+        // step 3: find nodes that are within the distance of the seed location
+        for (int node = 0; node < N_VOL_NODES; node++){
+
+            Node2Coord(node, current_coords);
+            particle_distance = sqrt(   SquaredDiff(current_coords[0] * coord_map_const, particle_coords[0] * coord_map_const)
+                                      + SquaredDiff(current_coords[1] * coord_map_const, particle_coords[1] * coord_map_const)
+                                      + SquaredDiff(current_coords[2] * coord_map_const, particle_coords[2] * coord_map_const) );
+
+            // check if node is the particle radius range
+            if (particle_distance <= radius_1){
+                particles_ind.push_back(node);
+            }
+
+            // check if node is in interfacial region (between resin and particle)
+            else if (interfacial_thick != 0 and particle_distance <= radius_1 + interfacial_thick * h){
+                particle_interfacial_nodes.push_back(node);
+            }
+
+            else{
+                continue;
+            }
+
+        }
+
+        // ensure vectors contain no duplicated nodes
+        UniqueVec(particles_ind);
+        UniqueVec(particle_interfacial_nodes);
+
+        // assign interfacial material properties
+        for (int i = 0; i < particle_interfacial_nodes.size(); i++){
+            material_type[particle_interfacial_nodes[i]]    = 2;
+
+            // thermal properties
+            density[particle_interfacial_nodes[i]]          = (rho_nacl + rho_UGAP) / 2;
+            heat_capacity[particle_interfacial_nodes[i]]    = (Cp_nacl + Cp_shanna) / 2;
+            therm_cond[particle_interfacial_nodes[i]]       = (K_thermal_nacl + K_thermal_shanna) / 2;
+
+            // reaction properties
+            k_t[particle_interfacial_nodes[i]]              = k_T0;
+            k_p[particle_interfacial_nodes[i]]              = k_P0;
+            c_PI[particle_interfacial_nodes[i]]             = c_PI0 / 2;
+            c_PIdot[particle_interfacial_nodes[i]]          = 0.;
+            c_Mdot[particle_interfacial_nodes[i]]           = 0.;
+            c_M[particle_interfacial_nodes[i]]              = c_M0 / 2;
+        }
+
+        // assign particle material properties
+        for (int i = 0; i < particles_ind.size(); i++){
+            material_type[particles_ind[i]]                 = 0;
+
+            // thermal properties
+            density[particles_ind[i]] = rho_nacl;
+            heat_capacity[particles_ind[i]]                 = Cp_nacl;
+            therm_cond[particles_ind[i]]                    = K_thermal_nacl;
+
+            // reaction properties
+            k_t[particles_ind[i]]                           = 0.;
+            k_p[particles_ind[i]]                           = 0.;
+            c_PI[particles_ind[i]]                          = 0.;
+            c_PIdot[particles_ind[i]]                       = 0.;
+            c_Mdot[particles_ind[i]]                        = 0.;
+            c_M[particles_ind[i]]                           = 0.;
+        }
+
+
+        // update total number of particle nodes
+        tot_part_nodes = particles_ind.size() + particle_interfacial_nodes.size() / 2;  
+
+        counter1++;
+        if (counter1 >= 10000000){
+            std::cout << "--- PARTICLE ITERATION THRESHOLD ---" << std::endl;
+        }
+        if (tot_part_nodes >= n_particle_nodes){
+            std::cout << "N_VOL_NODES: "          << N_VOL_NODES                                 << std::endl;
+            std::cout << "tot_part_nodes: " << tot_part_nodes                       << std::endl;
+            std::cout << "solids loading: "       <<  (1.0 * tot_part_nodes / N_VOL_NODES) << std::endl;
+        }
+    }
+
+    std::cout << "-------------------------------------------"                          << std::endl;
+    std::cout << "number of particles generated: "  << counter1                         << std::endl;
+    std::cout << "solids loading: "                 << n_particle_nodes / N_VOL_NODES   << std::endl;
+    std::cout << "n_particle_nodes: "               << n_particle_nodes                 << std::endl;
+    std::cout << "particles_ind.size(): "           << particles_ind.size()             << std::endl;
+    std::cout << "-------------------------------------------"                          << std::endl;
+}
+
+
+void Voxel::ComputeRxnRateConstants() {
+    /*
+     *   @updateVec - updates the reaction rate constants:
+     *                          - f_free_volume
+     *                          - k_p
+     *                          - k_t
+     *                for every voxel.
+     */
+
+    // initialize intermediate values
+    double vT, phi_M, phi_P, k_tr, denom;
+
+    // loop through all voxels
+    for (int i=0; i<N_VOL_NODES; i++){
+
+        // compute reaction rate constants for resin
+        if (material_type[i] != 0){
+
+            // bowman (1) equation 20
+            vT = c_M[i]*mw_M/rho_M + (c_M0-c_M[i])*mw_M/rho_P;
+
+            // bowman (1) equation 22
+            phi_M = c_M[i]*mw_M/rho_M/vT;
+
+            // bowman (1) equation 23
+            phi_P = (c_M0-c_M[i])*mw_M/rho_P/vT;
+
+            // bowman (1) equation 24
+            f_free_volume[i] = 0.025 + alpha_M*phi_M*(theta[i]-theta_gM) + alpha_P*phi_P*(theta[i]-theta_gP);
+
+            // compute temperature dependent rate constants
+            // bowman (1) equation 17
+            k_p[i] = k_P0*exp(-E_P / Rg / theta[i]) / (1 + exp(A_Dp * (1/f_free_volume[i] - 1/f_cp)));
+
+            // bowman (1) equation 18
+            k_tr = R_rd * k_p[i] * c_M[i];
+            denom = (k_tr / (k_T0*exp(-E_T/Rg/theta[i])) + exp(-A_Dt*(1/f_free_volume[i] - 1/f_ct)));
+            k_t[i] = k_T0*exp(-E_T/Rg/theta[i]) / (1+1/denom);
+
+        }else{
+            // compute reaction rate constants for particles
+            f_free_volume[i] = 0.;
+            k_t[i] = 0.;
+            k_p[i] = 0.;
+        };
+    }
+}
+
+
+double Voxel::IRate(std::vector<double> &conc_PI, double I0, double z, int node) const {
+    if (material_type[node] == 1){
+        // material is ugap
+        return (-phi * eps * I0 * conc_PI[node] * exp( -eps*conc_PI[node]*z) / 2);
+    }
+    
+    else if (material_type[node] == 2){
+        // material is interfacial
+        return (-phi * eps * I0 * conc_PI[node] * exp( -eps*conc_PI[node]*z) / 2);
+    }
+    else{
+        // material is particle
+        return 0.;
+    }
+
+}
+
+
+double Voxel::PIdotRate(std::vector<double> &conc_PIdot,
+                                 std::vector<double> &conc_PI,
+                                 std::vector<double> &conc_M,
+                                 double I0, double z, int node){
+    /*          
+    
+        equation 2
+        d[PI]/dt = phi*eps*[PI]I - k[PIdot][M]
+
+    */
+    if (material_type[node] == 1){
+        // material is ugap
+        double diffuse; 
+        diffuse = Dm0 * exp(-Am / f_free_volume[node])
+                        * (       conc_PIdot[node - 1]
+                            +     conc_PIdot[node - nodes]
+                            +     conc_PIdot[node - N_PLANE_NODES]
+                            - 6 * conc_PIdot[node]
+                            +     conc_PIdot[node + 1]
+                            +     conc_PIdot[node + nodes]
+                            +     conc_PIdot[node + N_PLANE_NODES]
+                        ) / h / h;
+
+        diff_pdot[node] = diffuse; 
+
+        return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i*conc_PIdot[node]*conc_M[node] + diffuse);
+    }
+    
+    else if (material_type[node] == 2){
+        // material is interface
+        return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i*conc_PIdot[node]*conc_M[node]);
+    }
+
+    else{
+        // materials is particle
+        return 0.;
+    }
+
+}
+
+
+
+double Voxel::MdotRate(std::vector<double> &conc_Mdot,
+                              std::vector<double> &conc_PIdot,
+                              std::vector<double> &conc_M,
+                              int node) {
+    /*          
+        equation 3:
+    
+        d[Mdot]/dt = k[PIdot][M] + ∇(k∇_x [Mdot]) - kt [Mdot]^2
+    
+    */
+
+    if (material_type[node] == 1){
+        // material is resin
+        double term1, term2, term3;
+        term1 = k_i*c_PIdot[node]*c_M[node];
+        term2 = k_t[node]*conc_Mdot[node]*conc_Mdot[node];
+        term3 = Dm0 * exp(-Am / f_free_volume[node])
+                  * (            conc_Mdot[node - N_PLANE_NODES]
+                           +     conc_Mdot[node - nodes]
+                           +     conc_Mdot[node - 1]
+                           - 6 * conc_Mdot[node]
+                           +     conc_Mdot[node + N_PLANE_NODES]
+                           +     conc_Mdot[node + nodes]
+                           +     conc_Mdot[node + 1]
+                  ) / h / h;
+
+        diff_mdot[node] = term3;
+        return (term1 - term2 + term3);
+    } 
+    
+    else if (material_type[node] == 2){
+        // material is interface 
+        return k_i*c_PIdot[node]*c_M[node] - k_t[node]*conc_Mdot[node]*conc_Mdot[node]; 
+    }
+    
+    else{
+        // material is a particle
+        return 0.;
+    }
+}
+
+
+
+double Voxel::MRate(std::vector<double> &conc_M,
+                                  std::vector<double> &conc_Mdot,
+                                  std::vector<double> &conc_PIdot,
+                                  int node){
+    
+    /*          
+        equation 4: 
+
+         d[M]/dt = ∇(k∇_x [M]) - k[PI][M] - k[M][Mdot]   
+    */
+    double diffuse, consume;
+
+    
+
+    if (material_type[node] == 1){
+        // material is resin
+        
+
+        consume =   (k_p[node]*conc_Mdot[node]*conc_M[node])
+                + (k_i*conc_PIdot[node]*conc_M[node]);
+
+        diffuse = Dm0 * exp(-Am / f_free_volume[node])
+                  * (            conc_M[node - N_PLANE_NODES]
+                           +     conc_M[node - nodes]
+                           +     conc_M[node - 1]
+                           - 6 * conc_M[node]
+                           +     conc_M[node + N_PLANE_NODES]
+                           +     conc_M[node + nodes]
+                           +     conc_M[node + 1]
+                  ) / h / h;
+        diff_m[node] = diffuse;
+        return (diffuse - consume);
+    }
+
+    else if (material_type[node] == 2){
+        // material is interface - no diffusion, return only consumptions
+        return -(k_p[node]*conc_Mdot[node]*conc_M[node]) - (k_i*conc_PIdot[node]*conc_M[node]);
+    }
+
+    else{
+        // material is particle - no reacton
+        return 0.;
+    }
+}
+
+
+double Voxel::TempRate(std::vector<double> &temperature,
+                           std::vector<double> &conc_M,
+                           std::vector<double> &conc_Mdot,
+                           std::vector<double> &conc_PI,
+                           double intensity, int node){
+    /*
+        equation 5
+         dθ/dt = ( ∇_x·(K ∇_x θ) + k_p [M] [M_n·] ΔH + ε [PI] I ) / ρ / C     
+    */
+    double heat_diffuse, heat_rxn, heat_uv;
+
+    heat_diffuse = therm_cond[node] / h / h
+                   * (         temperature[node - N_PLANE_NODES]
+                         +     temperature[node - nodes]
+                         +     temperature[node - 1]
+                         - 6 * temperature[node]
+                         +     temperature[node + N_PLANE_NODES]
+                         +     temperature[node + nodes]
+                         +     temperature[node + 1]
+                   );
+
+    heat_rxn = k_p[node] * conc_M[node] * conc_Mdot[node] * dHp;
+    heat_uv = eps
+              * intensity
+              * conc_PI[node]
+              * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  );
+    diff_theta[node] = heat_diffuse;
+    return (heat_diffuse + heat_rxn + heat_uv) / density[node] / heat_capacity[node];
+};
+
+
+void Voxel::SolveSystem(std::vector<double> &c_PI_next,
+                        std::vector<double> &c_PIdot_next,
+                        std::vector<double> &c_Mdot_next,
+                        std::vector<double> &c_M_next,
+                        std::vector<double> &theta_next,
+                        double I0, double dt, int method){
+    double heat_diffuse, heat_rxn, heat_uv;
+    int node;
+
+    // FORWARD EULER
+    if (method == 0){
+        double depth = 0;
+        for (int node = 0; node < N_VOL_NODES; node++){
+            Node2Coord(node, current_coords); 
+            int i = current_coords[0]; 
+            int j = current_coords[1]; 
+            int k = current_coords[2];
+
+            depth = len_block-current_coords[2]*coord_map_const;
+
+            // INTERNAL NODES
+            if (    current_coords[0] != 0 && current_coords[0] != (nodes-1)
+                 && current_coords[1] != 0 && current_coords[1] != (nodes-1)
+                 && current_coords[2] != 0 && current_coords[2] != (nodes-1)){
+                // std::cout << "\nINTERNAL NODE: " << std::endl; 
+
+                // solve equations 1-5
+                c_PI_next[node] = c_PI[node] + dt*IRate(c_PI, I0, depth, node); 
+                c_PIdot_next[node] = c_PIdot[node] + dt*PIdotRate(c_PIdot, c_PI, c_M, I0, depth, node); 
+                c_Mdot_next[node] = c_Mdot[node] + dt*MdotRate(c_Mdot, c_PIdot, c_M, node); 
+                c_M_next[node] = c_Mdot[node] + dt*MRate(c_M, c_Mdot, c_PIdot, node); 
+                theta_next[node] = theta[node] + dt*TempRate(theta, c_M, c_Mdot, c_PI, I0, node);
+                    }
+            // BOUNDARY NODES
+            else if (   current_coords[0] == 0 or current_coords[0] == (nodes-1)
+                     or current_coords[1] == 0 or current_coords[1] == (nodes-1)
+                     or current_coords[2] == 0 or current_coords[2] == (nodes-1)){
+                // std::cout << "\nBOUNDARY NODE: " << std::endl; 
+                
+
+                // solve non-spatially dependent equations
+                c_PI_next[node] = c_PI[node] + dt*IRate(c_PI, I0, depth, node); 
+
+                // check material type is interfacial, skip spatial dependencies for reactions
+                if (material_type[node] == 2){
+                    c_PIdot_next[node] = c_PIdot[node] + dt*PIdotRate(c_PIdot, c_PI, c_M, I0, depth, node); 
+                    c_Mdot_next[node]  = c_Mdot[node] + dt*MdotRate(c_Mdot, c_PIdot, c_M, node); 
+                    c_M_next[node]     = c_Mdot[node] + dt*MRate(c_M, c_Mdot, c_PIdot, node); 
+                }
+
+                // ENFORCE NEUMANN BOUNDARY CONDITIONS
+
+                // bottom face
+                if (i == 0){
+                    if (material_type[node] == 1){
+                        // ugap resin
+                        c_PIdot[node] = c_PIdot[node+N_PLANE_NODES]; 
+                        c_Mdot[node]  = c_Mdot[node+N_PLANE_NODES]; 
+                        c_M[node]     = c_M[node+N_PLANE_NODES];  
+                    }
+
+                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                    // theta[node] = theta[node+N_PLANE_NODES];
+
+                }
+
+                // top face
+                else if (i == (nodes-1)){
+                    // ugap resin
+                    if (material_type[node] == 1){
+                        c_PIdot[node] = c_PIdot[node-N_PLANE_NODES]; 
+                        c_Mdot[node]  = c_Mdot[node-N_PLANE_NODES];
+                        c_M[node]     = c_M[node-N_PLANE_NODES]; 
+                        }
+
+                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                    // theta[node] = theta[node-N_PLANE_NODES];   
+                } 
+                
+                // wall 1: front wall 
+                else if (j == 0){
+                    // ugap resin
+                    if (material_type[node] == 1){
+                        c_PIdot[node] = c_PIdot[node+nodes]; 
+                        c_Mdot[node]  = c_Mdot[node+nodes]; 
+                        c_M[node]     = c_M[node+nodes];    
+                    }
+
+                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                    // theta[node] = theta[node+nodes]; 
+                }
+                
+                // wall 3: back wall
+                else if (j == (nodes-1)){
+                    // ugap resin 
+                    if (material_type[node] == 1){
+                        c_PIdot[node] = c_PIdot[node-nodes];
+                        c_Mdot[node]  = c_Mdot[node-nodes]; 
+                        c_M[node]     = c_M[node-nodes];
+                    }
+
+                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                    // theta[node] = theta[node-nodes];
+                }
+
+                // wall 2: left wall
+                else if (k == 0){
+                    if (material_type[node] == 1){
+                        // ugap resin
+                        c_PIdot[node] = c_PIdot[node+1]; 
+                        c_Mdot[node]  = c_Mdot[node+1]; 
+                        c_M[node]     = c_M[node+1]; 
+                    }
+
+                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                    // theta[node] = theta[node+1];
+                }
+
+                // wall 4: right wall
+                else if (k == (nodes-1)){
+                    if (material_type[node] == 1){
+                        // ugap resin
+                        c_PIdot[node] = c_PIdot[node-1]; 
+                        c_Mdot[node]  = c_Mdot[node-1]; 
+                        c_M[node]     = c_M[node-1]; 
+                    }
+
+                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                    // theta[node] = theta[node-1];
+                }else{
+                    throw std::invalid_argument("--- forward euler: boundary condition error ---");
+                }
+            }else{
+                std::cout << "\n--- error location ---" << std::endl;
+                std::cout << "i : " << i << " | j: " << j << " | k: " << k << std::endl; 
+                throw std::invalid_argument("--- forward euler: node error ---");
+            }
+        }
+        //         }
+        //     }
+        // }
+    }
+
+    // backward euler
+    else if (method == 1){
+
+        std::vector<double> c_PI_0(N_VOL_NODES),
+                            c_PI_1(N_VOL_NODES),
+                            c_PIdot_0(N_VOL_NODES),
+                            c_PIdot_1(N_VOL_NODES),
+                            c_Mdot_0(N_VOL_NODES),
+                            c_Mdot_1(N_VOL_NODES),
+                            c_M_0(N_VOL_NODES),
+                            c_M_1(N_VOL_NODES),
+                            theta_0(N_VOL_NODES),
+                            theta_1(N_VOL_NODES);
+
+        for (int node = 0; node < N_VOL_NODES; node++){
+            c_PI_0[node] = c_PI[node];
+            c_PI_1[node] = c_PI[node];
+            c_PIdot_0[node] = c_PIdot[node];
+            c_PIdot_1[node] = c_PIdot[node];
+            c_Mdot_0[node] = c_Mdot[node];
+            c_Mdot_1[node] = c_Mdot[node];
+            c_M_0[node] = c_M[node];
+            c_M_1[node] = c_M[node];
+            theta_0[node] = theta[node];
+            theta_1[node] = theta[node];
+        }
+
+        int count = 0;
+        double error = 100;
+        double depth = 0; 
+
+        // fixed point iteration
+
+        while (error > tol){
+
+            // cap iterations
+            if (count > thresh){
+                std::cout << "error: " << error << std::endl;
+                throw std::invalid_argument("--- SolveSystem (backward euler) did not converge ---");
+            }
+
+            double err_step = 0;
+            for (int node = 0; node < N_VOL_NODES; node++){
+
+                // get node coordinates
+                Node2Coord(node, current_coords);
+                int i = current_coords[0]; 
+                int j = current_coords[1]; 
+                int k = current_coords[2];
+
+                // internal nodes
+                if (    i != 0 && i != (nodes-1)
+                     && j != 0 && j != (nodes-1)
+                     && k != 0 && k != (nodes-1)){
+
+                    // solve equation 1
+                    c_PI_1[node] = c_PI[node] + dt* IRate(c_PI_0,
+                                                            I0,
+                                                            len_block-current_coords[2]*coord_map_const,
+                                                            node);
+
+                    err_step +=   SquaredDiff(c_PI_0[node], c_PI_1[node]);
+
+                    // solve equation 2
+                    c_PIdot_1[node] = c_PIdot[node] + dt* PIdotRate(c_PIdot_0,
+                                                                    c_PI_0,
+                                                                    c_M_0,
+                                                                    I0,
+                                                                    len_block-current_coords[2]*coord_map_const,
+                                                                    node);
+                    err_step += SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                    // solve equation 3
+                    c_Mdot_1[node] = c_Mdot[node] + dt* MdotRate(c_Mdot_0,
+                                                                    c_PIdot_0,
+                                                                    c_M_0, 
+                                                                    node);
+
+                    err_step += SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]);
+
+
+                    // solve equation 4
+                    c_M_1[node] = c_M[node] + dt* MRate(c_M_0,
+                                                        c_Mdot_0,
+                                                        c_PIdot_0,
+                                                        node);
+                    err_step += SquaredDiff(c_M_0[node], c_M_1[node]);
+
+                    // solve equation 5
+                    theta_1[node] = theta[node] + dt*TempRate(theta_0,
+                                                                c_M_0,
+                                                                c_Mdot_0,
+                                                                c_PI_0,
+                                                                I0, node);
+                    err_step += SquaredDiff(theta_0[node], theta_1[node]);
+                }
+                // BOUNDARY NODES
+                else if (   i == 0 || i == (nodes-1)
+                         || j == 0 || j == (nodes-1)
+                         || k == 0 || k == (nodes-1)){
+
+                    // solve non-spatially dependent equations: equation 1
+                    c_PI_1[node] = c_PI[node] + dt*IRate(c_PI_0,
+                                                            I0,
+                                                            len_block-current_coords[2]*coord_map_const,
+                                                            node);
+                    err_step += SquaredDiff(c_PI_0[node], c_PI_1[node]);
+
+                    // check material type is interfacial, skip spatial dependencies for reactions
+                    if (material_type[node] == 2){
+                        // solve equation 2
+                        c_PIdot_1[node] = c_PIdot[node] + dt*PIdotRate(c_PIdot_0,
+                                                                c_PI_0,
+                                                                c_M_0,
+                                                                I0,
+                                                                len_block-current_coords[2]*coord_map_const,
+                                                                node);
+                        err_step += SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                        // solve equation 3
+                        c_Mdot_1[node] = c_Mdot[node] + dt*MdotRate(c_Mdot_0,
+                                                                    c_PIdot_0,
+                                                                    c_M_0,
+                                                                    node);
+                        err_step += SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]);
+
+                        // solve equation 4
+                        c_M_1[node] = c_M[node] + dt*MRate(c_M_0, c_Mdot_0, c_PIdot_0, node);
+                        err_step += SquaredDiff(c_M_0[node], c_M_1[node]);
+
+                    }
+
+                    // ENFORCE NEUMANN BOUNDARY CONDITIONS
+
+                    // bottom face
+                    if (i == 0){
+                        if (material_type[node] == 1){
+                            // ugap resin
+                            
+                            c_PIdot_1[node] = c_PIdot_0[node+N_PLANE_NODES]; // first order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            c_Mdot_1[node] = c_Mdot_0[node+N_PLANE_NODES];
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            c_M_1[node] = c_M_0[node+N_PLANE_NODES];
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATIONs
+                        // theta_1[node] = theta_0[node+N_PLANE_NODES];
+                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // top face
+                    else if (i == (nodes-1)){
+                        // ugap resin
+                        if (material_type[node] == 1){
+                            c_PIdot_1[node] =  c_PIdot_0[node-N_PLANE_NODES];   // first order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            c_Mdot_1[node] = c_Mdot_0[node-N_PLANE_NODES]; 
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            c_M_1[node] = c_M_0[node-N_PLANE_NODES];
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+                        
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node-N_PLANE_NODES];
+                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // wall 1: front wall
+                    else if (j == 0){
+                        if (material_type[node] == 1){
+                            c_PIdot_1[node] =  c_PIdot_0[node+nodes]; // first order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            c_Mdot_1[node] = c_Mdot_0[node+nodes]; 
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]);
+
+                            c_M_1[node] = c_M_0[node+nodes];
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node+nodes];
+                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // wall 3: back wall
+                    else if (j == (nodes-1)){
+                        if (material_type[node] == 1){
+
+                            c_PIdot_1[node] =  c_PIdot_0[node-nodes]; 
+                            err_step       +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            c_Mdot_1[node]  = c_Mdot_0[node-nodes]; 
+                            err_step       +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            c_M_1[node]     = c_M_0[node-nodes];
+                            err_step       +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node-nodes];
+                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // wall 2: left wall
+                    else if (k == 0){
+                        if (material_type[node] == 1){
+                            c_PIdot_1[node] =  c_PIdot_0[node+1]; 
+                            err_step       +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            c_Mdot_1[node]  = c_Mdot_0[node+1]; 
+                            err_step       +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            c_M_1[node]     = c_M_0[node+1];
+                            err_step       += SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node+1];
+                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // wall 4: right wall
+                    else if (k == (nodes-1)){
+                        if (material_type[node] == 1){
+                            c_PIdot_1[node] =  c_PIdot_0[node-1]; 
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            c_Mdot_1[node] = c_Mdot_0[node-1]; 
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            c_M_1[node] = c_M_0[node-1];
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node-1];
+                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }else{
+                        throw std::invalid_argument("--- Backward Euler: boundary condition error ---");
+                    }
+                }else{
+                    // something is wrong..
+                    throw std::invalid_argument("--- FIXED POINT NODE BOUNDARY ISSUE ---");
+                }
+            }
+
+            error = sqrt(err_step);
+            count++;
+
+            if (error > tol){
+                c_PI_0 = c_PI_1;
+                c_PIdot_0 = c_PIdot_1;
+                c_Mdot_0 = c_Mdot_1;
+                c_M_0 = c_M_1;
+                theta_0 = theta_1;
+            }else{
+                c_PI_next = c_PI_1;
+                c_PIdot_next = c_PIdot_1;
+                c_Mdot_next = c_Mdot_1;
+                c_M_next = c_M_1;
+                theta_next = theta_1;
+            }
+        }
+    }
+
+    // trapezoidal
+    else if (method == 2){
+        
+        // declare implicit vectors
+        std::vector<double> c_PI_0(N_VOL_NODES),
+                            c_PI_1(N_VOL_NODES),
+                            c_PIdot_0(N_VOL_NODES),
+                            c_PIdot_1(N_VOL_NODES),
+                            c_Mdot_0(N_VOL_NODES),
+                            c_Mdot_1(N_VOL_NODES),
+                            c_M_0(N_VOL_NODES),
+                            c_M_1(N_VOL_NODES),
+                            theta_0(N_VOL_NODES),
+                            theta_1(N_VOL_NODES);
+
+        // initialize implicit vectors
+        for (int node = 0; node < N_VOL_NODES; node++){
+            c_PI_0[node]    = c_PI[node];
+            c_PI_1[node]    = c_PI[node];
+            c_PIdot_0[node] = c_PIdot[node];
+            c_PIdot_1[node] = c_PIdot[node];
+            c_Mdot_0[node]  = c_Mdot[node];
+            c_Mdot_1[node]  = c_Mdot[node];
+            c_M_0[node]     = c_M[node];
+            c_M_1[node]     = c_M[node];
+            theta_0[node]   = theta[node];
+            theta_1[node]   = theta[node];
+        }
+
+        // set trapezoidal hyper parameter: 1-FEuler, 0-BEuler, 0.5-Trap
+        float psi = 0.5;
+        int count = 0;
+        double error = 100;
+        double err_step;
+        double depth = 0;
+
+        // fixed point iteration
+        while (error > tol){
+
+            // cap iterations
+            if (count > thresh){
+                throw std::invalid_argument("--- SolveSystem (trapezoidal) did not converge ---");
+            }
+
+            err_step = 0;
+
+            for (int node = 0; node < N_VOL_NODES; node++){
+
+                // map node to coordinates
+                Node2Coord(node, current_coords); 
+                int i = current_coords[0]; 
+                int j = current_coords[1]; 
+                int k = current_coords[2]; 
+
+                depth = len_block-current_coords[2]*coord_map_const;
+
+                // internal nodes
+                if (   i != 0 && i != (nodes-1)
+                    && j != 0 && j != (nodes-1)
+                    && k != 0 && k != (nodes-1)){
+
+                    // solve equation 1
+                    c_PI_1[node] =   c_PI[node] + dt * (  (1-psi) * IRate(c_PI_0, I0, depth, node)
+                                                            +   psi   * IRate(c_PI, I0, depth, node));
+
+                    err_step += SquaredDiff(c_PI_0[node], c_PI_1[node]);
+
+
+                    // solve equation 2
+                    c_PIdot_1[node] = c_PIdot[node] + dt * (   (1-psi) * PIdotRate(c_PIdot_0, c_PI_0, c_M_0, I0, depth, node)
+                                                                +   psi   * PIdotRate(c_PIdot, c_PI, c_M, I0, depth, node));
+
+                    err_step += SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                    // solve equation 3
+                    c_Mdot_1[node] = c_Mdot[node] + dt * (   (1-psi) * MdotRate(c_Mdot_0, c_PIdot_0, c_M_0, node)
+                                                            +   psi   * MdotRate(c_Mdot, c_PIdot, c_M, node));
+
+                    err_step += SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]);
+
+                    // solve equation 4
+                    c_M_1[node] = c_M[node] + dt * (   (1-psi) * MRate(c_M_0, c_Mdot_0, c_PIdot_0, node)
+                                                        +   psi   * MRate(c_M, c_Mdot, c_PIdot, node));
+
+                    err_step += SquaredDiff(c_M_0[node], c_M_1[node]);
+
+                    // solve equation 5
+                    theta_1[node] = theta[node] + dt* (   (1-psi) * TempRate(theta_0, c_M_0, c_Mdot_0, c_PI_0, I0, node)
+                                                        +   psi   * TempRate(theta, c_M, c_Mdot, c_PI, I0, node));
+
+                    err_step += SquaredDiff(theta_0[node], theta_1[node]);
+
+                }
+
+                // BOUNDARY NODES
+                else if (   i == 0 || i == (nodes-1)
+                         || j == 0 || j == (nodes-1)
+                         || k == 0 || k == (nodes-1)){
+
+                    // solve non-spatially dependent equations: equation 1
+                    c_PI_1[node] = c_PI[node]
+                                    + dt*(  (1-psi) * IRate(c_PI_0, I0, depth, node)
+                                            +   psi   * IRate(c_PI, I0, depth, node));
+                    err_step +=   SquaredDiff(c_PI_0[node], c_PI_1[node]);
+                    
+                    // check material type is interfacial, skip spatial dependencies for reactions
+                    if (material_type[node] == 2){
+                        // solve equation 2
+                        c_PIdot_1[node] = c_PIdot[node] + dt * (   (1-psi) * PIdotRate(c_PIdot_0, c_PI_0, c_M_0, I0, depth, node)
+                                                                +   psi   * PIdotRate(c_PIdot, c_PI, c_M, I0, depth, node));
+                        err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                        // solve equation 3
+                        c_Mdot_1[node] = c_Mdot[node] + dt * (   (1-psi) * MdotRate(c_Mdot_0, c_PIdot_0, c_M_0, node)
+                                                                +   psi   * MdotRate(c_Mdot, c_PIdot, c_M, node));
+                        err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]);
+
+                        // solve equation 4
+                        c_M_1[node] = c_M[node] + dt * (   (1-psi) * MRate(c_M_0, c_Mdot_0, c_PIdot_0, node)
+                                                        +   psi   * MRate(c_M, c_Mdot, c_PIdot, node));
+                        err_step += SquaredDiff(c_M_0[node], c_M_1[node]);
+
+                    }
+
+                    // ENFORCE NEUMANN BOUNDARY CONDITIONS
+
+                    // bottom face
+                    double pre_1 = 4 / 3, pre_2 = 1 / 3; 
+                    if (i == 0){
+                        if (material_type[node] == 1){
+                            // ugap resin
+                            // c_PIdot_1[node] =  c_PIdot_0[node+N_PLANE_NODES]; 
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+N_PLANE_NODES] - pre_2 * c_PIdot_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            // c_Mdot_1[node] = c_Mdot_0[node+N_PLANE_NODES]; 
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node+N_PLANE_NODES] - pre_2 * c_Mdot_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+                            
+                            // c_M_1[node] = c_M_0[node+N_PLANE_NODES];
+                            c_M_1[node] = pre_1 * c_M_1[node+N_PLANE_NODES] - pre_2 * c_M_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node+N_PLANE_NODES];
+                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
+                    }else if (i == (nodes-1)){
+                        // top face
+                        if (material_type[node] == 1){
+                            // c_PIdot_1[node] =  c_PIdot_0[node-N_PLANE_NODES]; 
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-N_PLANE_NODES] - pre_2 * c_PIdot_1[node-N_PLANE_NODES-N_PLANE_NODES]; // second order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            // c_Mdot_1[node] = c_Mdot_0[node-N_PLANE_NODES]; 
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-N_PLANE_NODES] - pre_2 * c_Mdot_1[node-N_PLANE_NODES-N_PLANE_NODES]; // second order approximation
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            // c_M_1[node] = c_M_0[node-N_PLANE_NODES];
+                            c_M_1[node] = pre_1 * c_M_1[node-N_PLANE_NODES] - pre_2 * c_M_1[node-N_PLANE_NODES-N_PLANE_NODES]; // second order approximation
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node-N_PLANE_NODES];
+                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // wall 1: front wall
+                    else if (j == 0){
+                        if (material_type[node] == 1){
+                            // c_PIdot_1[node] =  c_PIdot_0[node+nodes]; 
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+nodes] - pre_2 * c_PIdot_1[node+nodes+nodes]; // second order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            // c_Mdot_1[node] = c_Mdot_0[node+nodes]; 
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node+nodes] - pre_2 * c_Mdot_1[node+nodes+nodes]; // second order approximation
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]);
+
+                            // c_M_1[node] = c_M_0[node+nodes];
+                            c_M_1[node] = pre_1 * c_M_1[node+nodes] - pre_2 * c_M_1[node+nodes+nodes]; // second order approximation
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node+nodes];
+                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // wall 3: back wall
+                    else if (j == (nodes-1)){
+                        if (material_type[node] == 1){
+
+                            // c_PIdot_1[node] =  c_PIdot_0[node-nodes]; 
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-nodes] - pre_2 * c_PIdot_1[node-nodes-nodes]; // second order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            // c_Mdot_1[node] = c_Mdot_0[node-nodes]; 
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-nodes] - pre_2 * c_Mdot_1[node-nodes-nodes]; // second order approximation
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            // c_M_1[node] = c_M_0[node-nodes];
+                            c_M_1[node] = pre_1 * c_M_1[node-nodes] - pre_2 * c_M_1[node-nodes-nodes]; // second order approximation
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node-nodes];
+                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // wall 2: left wall
+                    else if (k == 0){
+                        if (material_type[node] == 1){
+                            // c_PIdot_1[node] =  c_PIdot_0[node+1]; 
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+1] - pre_2 * c_PIdot_1[node+1+1]; // second order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            // c_Mdot_1[node] = c_Mdot_0[node+1]; 
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node+1] - pre_2 * c_Mdot_1[node+1+1]; // second order approximation
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            // c_M_1[node] = c_M_0[node+1];
+                            c_M_1[node] = pre_1 * c_M_1[node+1] - pre_2 * c_M_1[node+1+1]; // second order approximation
+                            err_step += SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node+1];
+                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    // wall 4: right wall
+                    else if (k == (nodes-1)){
+                        if (material_type[node] == 1){
+                            // c_PIdot_1[node] =  c_PIdot_0[node-1]; 
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-1] - pre_2 * c_PIdot_1[node-1-1]; // second order approximation
+                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+
+                            // c_Mdot_1[node] = c_Mdot_0[node-1]; 
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-1] - pre_2 * c_Mdot_1[node-1-1]; // second order approximation
+                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+
+                            // c_M_1[node] = c_M_0[node-1];
+                            c_M_1[node] = pre_1 * c_M_1[node-1] - pre_2 * c_M_1[node-1-1]; // second order approximation
+                            err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
+                        }
+
+                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
+                        // theta_1[node] = theta_0[node-1];
+                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
+
+                    }
+
+                    else{
+                        throw std::invalid_argument("--- trapezoidal: boundary condition error ---");
+                    }
+                }else {
+                    // something is wrong..
+                    throw std::invalid_argument("--- FIXED POINT BOUNDARY NODE ISSUE: trapezoidal ---");
+                }
+            }
+
+
+            error = sqrt(err_step);
+            count++;
+
+            if (error > tol){
+                c_PI_0 = c_PI_1;
+                c_PIdot_0 = c_PIdot_1;
+                c_Mdot_0 = c_Mdot_1;
+                c_M_0 = c_M_1;
+                theta_0 = theta_1;
+            }
+            else{
+                c_PI_next = c_PI_1;
+                c_PIdot_next = c_PIdot_1;
+                c_Mdot_next = c_Mdot_1;
+                c_M_next = c_M_1;
+                theta_next = theta_1;
+            }
+        }
+    }
+}
+
+
+void Voxel::Config2File(double dt){
+    
+    // write to file
+    print_sim_config.open("/home/brian/Documents/berkeley/reaction_diffusion/output/sim_config/sim_config.txt");
+    print_sim_config << "Simulation Configuration\n" << std::endl; 
+
+    print_sim_config << "==================================" << std::endl;
+
+    print_sim_config << "Initial concentrations (mol/m^3): " << std::endl;
+    print_sim_config << "c_M0: " << c_M0 << std::endl;
+    print_sim_config << "c_PI0: " << c_PI0 << std::endl;
+    print_sim_config << "theta0 " << theta0 << std::endl;
+    print_sim_config << "==================================\n" << std::endl;
+
+    print_sim_config << "Numerical parameters" << std::endl;
+    print_sim_config << "h: " << h << std::endl;
+    print_sim_config << "dt: " << dt << std::endl;
+    print_sim_config << "CFL: " << dt / h << std::endl;
+    
+
+    print_sim_config << "\n==================================" << std::endl;
+    // print_sim_config << "number of particles generated: " << counter1 << std::endl;
+    print_sim_config << "solids loading: " << (1.0 * particles_ind.size() / N_VOL_NODES) << std::endl;
+    // print_sim_config << "n_particle_nodes: " << n_particle_nodes << std::endl;
+    print_sim_config << "particles_ind.size(): " << particles_ind.size() << std::endl;
+    print_sim_config << "\n==================================" << std::endl;
+
+    print_sim_config.close(); 
+}
+
+
+void Voxel::Density2File(){
+    // write to file
+    print_density.open("/home/brian/Documents/berkeley/reaction_diffusion/output/density/density.vtk");
+    print_density << "# vtk DataFile Version 2.0" << std::endl;
+    print_density << "voxel density ugap with particles" << std::endl;
+    print_density << "ASCII" << std::endl;
+    print_density << "DATASET RECTILINEAR_GRID" << std::endl;
+    print_density << "DIMENSIONS " << nodes << " " <<  nodes << " " << nodes << std::endl;
+
+    print_density << "X_COORDINATES " << nodes << " float" << std::endl;
+    double dx = 0.;
+    int counter = 1;
+    for (int i = 0; i < nodes; i++){
+        print_density << dx * 1000 << " ";
+        if (counter % 6 == 0){
+            print_density << std::endl;
+        }
+        dx += h;
+        counter++;
+    }
+    print_density << std::endl;
+
+    print_density << "Y_COORDINATES " << nodes << " float" << std::endl;
+    dx = 0.;
+    counter = 1;
+    for (int i = 0; i < nodes; i++){
+        print_density << dx * 1000 << " ";
+        if (counter % 6 == 0){
+            print_density << std::endl;
+        }
+        dx += h;
+        counter++;
+    }
+    print_density << std::endl;
+
+    print_density << "Z_COORDINATES " << nodes << " float" << std::endl;
+    dx = 0.;
+    counter = 1;
+    for (int i = 0; i < nodes; i++){
+
+        print_density << dx * 1000 << " ";
+        if (counter % 6 == 0){
+            print_density << std::endl;
+        }
+        dx += h;
+        counter++;
+    }
+    print_density << std::endl;
+
+    print_density << "POINT_DATA " << N_VOL_NODES << std::endl;
+    print_density << "SCALARS density float" << std::endl;
+    print_density << "LOOKUP_TABLE default" << std::endl;
+    counter = 1;
+    for (int i = 0; i < N_VOL_NODES; i++){
+        print_density << density[i] << " ";
+        if (counter % 6 == 0){
+            print_density << std::endl;
+        }
+        counter++;
+    }
+    print_density.close();
+
+}
+
+void Voxel::AvgConcentrations2File(int counter, 
+                                   std::vector<double> &c_PI_next,
+                                   std::vector<double> &c_PIdot_next,
+                                   std::vector<double> &c_Mdot_next,
+                                   std::vector<double> &c_M_next,
+                                   std::vector<double> &theta_next,
+                                   double time){
+    
+    // compute average top concentration
+    double avg_top_cPI = 0, avg_tot_cPI = 0, avg_bot_cPI = 0; 
+    double avg_top_cPIdot = 0, avg_tot_cPIdot = 0, avg_bot_cPIdot = 0;
+    double avg_top_cMdot = 0, avg_tot_cMdot = 0, avg_bot_cMdot = 0;
+    double avg_top_cM = 0, avg_tot_cM = 0, avg_bot_cM = 0;
+    double avg_top_theta = 0, avg_tot_theta = 0, avg_bot_theta = 0;
+    double avg_free_volume = 0, avg_k_p = 0, avg_k_t = 0;
+    double avg_diff_pdot = 0, avg_diff_mdot = 0, avg_diff_m = 0, avg_diff_theta = 0; 
+    
+    // compute average top, total and bottom concentration, and then write to file
+    
+
+    int nodes_resin = 0; 
+    int nodes_top_resin = 0, nodes_bot_resin = 0; 
+    for (int node = 0; node < N_VOL_NODES; node++){
+
+        // compute average temperature related values over all nodes
+        avg_diff_theta  += diff_theta[node];
+        avg_tot_theta   += theta_next[node];
+
+        // compute average reaction related values over resin nodes
+        if (material_type[node] == 1){
+            // compute average total concentration
+            avg_tot_cPI     += c_PI_next[node];
+            avg_tot_cPIdot  += c_PIdot_next[node];
+            avg_tot_cMdot   += c_Mdot_next[node];
+            avg_tot_cM      += c_M_next[node];
+            
+            avg_free_volume += f_free_volume[node];
+            avg_k_p         += k_p[node];
+            avg_k_t         += k_t[node];
+            avg_diff_pdot   += diff_pdot[node];
+            avg_diff_mdot   += diff_mdot[node];
+            avg_diff_m      += diff_m[node];
+            
+
+
+            // compute average bottom concentration
+            if (node < N_PLANE_NODES){
+                avg_bot_cPI     += c_PI_next[node];
+                avg_bot_cPIdot  += c_PIdot_next[node];
+                avg_bot_cMdot   += c_Mdot_next[node];
+                avg_bot_cM      += c_M_next[node];
+                // avg_bot_theta += theta_next[node];
+                
+                nodes_bot_resin++; 
+                
+            }
+
+            // compute average top concentration
+            if (node > N_VOL_NODES - N_PLANE_NODES){
+                avg_top_cPI     += c_PI_next[node];
+                avg_top_cPIdot  += c_PIdot_next[node];
+                avg_top_cMdot   += c_Mdot_next[node];
+                avg_top_cM      += c_M_next[node];
+                // avg_top_theta += theta_next[node];
+
+                nodes_top_resin++;
+            }
+            
+            nodes_resin++;
+        }   
+    }
+
+    avg_tot_cPI     /= nodes_resin;
+    avg_bot_cPI     /= nodes_bot_resin;
+    avg_top_cPI     /= nodes_top_resin;
+
+    avg_tot_cPIdot  /= nodes_resin;
+    avg_bot_cPIdot  /= nodes_bot_resin;
+    avg_top_cPIdot  /= nodes_top_resin;
+
+    avg_tot_cMdot   /= nodes_resin;
+    avg_bot_cMdot   /= nodes_bot_resin;
+    avg_top_cMdot   /= nodes_top_resin;
+
+    avg_tot_cM      /= nodes_resin;
+    avg_bot_cM      /= nodes_bot_resin;
+    avg_top_cM      /= nodes_top_resin;
+
+    avg_tot_theta   /= N_VOL_NODES;
+    avg_free_volume /= nodes_resin;
+    avg_k_p         /= nodes_resin;
+    avg_k_t         /= nodes_resin;
+
+    avg_diff_pdot   /= nodes_resin;
+    avg_diff_mdot   /= nodes_resin;
+    avg_diff_m      /= nodes_resin;
+    avg_diff_theta  /= N_VOL_NODES;
+
+    // avg_bot_theta /= N_PLANE_NODES;
+    // avg_top_theta /= N_PLANE_NODES;
+
+    // open file
+    
+    if (counter == 0){std::string file_avg_concentrations = "/home/brian/Documents/berkeley/reaction_diffusion/output/python_plotting/avg_concentration.csv";
+        print_avg_concentrations.open(file_avg_concentrations);
+        print_avg_concentrations << "time, avg_top_cPI, avg_tot_cPI, avg_bot_cPI, ";
+        print_avg_concentrations <<       "avg_top_cPIdot, avg_tot_cPIdot, avg_bot_cPIdot, "; 
+        print_avg_concentrations <<       "avg_top_cMdot, avg_tot_cMdot, avg_bot_cMdot, ";
+        print_avg_concentrations <<       "avg_top_cM, avg_tot_cM, avg_bot_cM, "; 
+        print_avg_concentrations <<       "avg_tot_theta, "; 
+        print_avg_concentrations <<       "avg_free_volume, avg_k_p, avg_k_t, ";
+        print_avg_concentrations <<       "avg_diff_pdot, avg_diff_mdot, avg_diff_m, avg_diff_theta" << std::endl;
+
+    }
+
+    print_avg_concentrations << time << ", ";
+    print_avg_concentrations << avg_top_cPI << ", " << avg_tot_cPI << ", " << avg_bot_cPI << ", ";
+    print_avg_concentrations << avg_top_cPIdot << ", " << avg_tot_cPIdot << ", " << avg_bot_cPIdot << ", ";
+    print_avg_concentrations << avg_top_cMdot << ", " << avg_tot_cMdot << ", " << avg_bot_cMdot << ", ";
+    print_avg_concentrations << avg_top_cM << ", " << avg_tot_cM << ", " << avg_bot_cM << ", ";
+    print_avg_concentrations << avg_tot_theta << ", " << avg_free_volume << ", " << avg_k_t << ", " << avg_k_p << ", "; 
+    print_avg_concentrations << avg_diff_pdot << ", " << avg_diff_mdot << ", " << avg_diff_m << ", " << avg_diff_theta << std::endl;
+    
+    if (time == 30.0){
+        std::cout << "--- COMPLETE ---" << std::endl;
+        print_avg_concentrations.close();
+    }
+
+}
+
+void Voxel::Concentrations2File(int counter,
+                                std::vector<double> &c_PI_next,
+                                std::vector<double> &c_PIdot_next,
+                                std::vector<double> &c_Mdot_next,
+                                std::vector<double> &c_M_next,
+                                std::vector<double> &theta_next,
+                                double time){
+
+
+    // write to file
+    std::string file_name = "/home/brian/Documents/berkeley/reaction_diffusion/output/concentrations_t" + std::to_string(counter) + ".vtk";
+    print_concentrations.open(file_name);
+    print_concentrations << "# vtk DataFile Version 2.0" << std::endl;
+    print_concentrations << "voxel concentration ugap with particles" << std::endl;
+    print_concentrations << "ASCII" << std::endl;
+    print_concentrations << "DATASET RECTILINEAR_GRID" << std::endl;
+    print_concentrations << "DIMENSIONS " << nodes << " " <<  nodes << " " << nodes << std::endl;
+
+    print_concentrations << "X_COORDINATES " << nodes << " float" << std::endl;
+    double dx = 0.;
+    int cnt = 1;
+    for (int i = 0; i < nodes; i++){
+        print_concentrations << dx * 1000 << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        dx += h;
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "Y_COORDINATES " << nodes << " float" << std::endl;
+    dx = 0.;
+    cnt = 1;
+    for (int i = 0; i < nodes; i++){
+        print_concentrations << dx * 1000 << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        dx += h;
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "Z_COORDINATES " << nodes << " float" << std::endl;
+    dx = 0.;
+    cnt = 1;
+    for (int i = 0; i < nodes; i++){
+
+        print_concentrations << dx * 1000 << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        dx += h;
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "POINT_DATA " << N_VOL_NODES << std::endl;
+    print_concentrations << "SCALARS c_PI float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+    for (int i = 0; i < N_VOL_NODES; i++){
+        print_concentrations << c_PI_next[i] << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "SCALARS c_PIdot float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+    for (int i = 0; i < N_VOL_NODES; i++){
+        print_concentrations << c_PIdot_next[i] << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "SCALARS c_Mdot float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+    for (int i = 0; i < N_VOL_NODES; i++){
+        print_concentrations << c_Mdot_next[i] << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "SCALARS c_M float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+    for (int i = 0; i < N_VOL_NODES; i++){
+        print_concentrations << c_M_next[i] << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "SCALARS theta float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+    for (int i = 0; i < N_VOL_NODES; i++){
+        print_concentrations << theta[i] << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations.close();
+}
+
+
+void Voxel::NonBoundaries2File( int counter, 
+                                std::vector<double> &c_PI_next,
+                                std::vector<double> &c_PIdot_next,
+                                std::vector<double> &c_Mdot_next,
+                                std::vector<double> &c_M_next,
+                                std::vector<double> &theta_next,
+                                double time, 
+                                int (&coords)[3]){
+
+    // writes only non-boundary nodes to file
+
+    // WRITE TO FILE
+    std::string file_name = "/home/brian/Documents/berkeley/reaction_diffusion/output/concentrations_t" + std::to_string(counter) + ".vtk";
+    print_concentrations.open(file_name);
+    print_concentrations << "# vtk DataFile Version 2.0" << std::endl;
+    print_concentrations << "voxel concentration ugap with particles" << std::endl;
+    print_concentrations << "ASCII" << std::endl;
+    print_concentrations << "DATASET RECTILINEAR_GRID" << std::endl;
+    print_concentrations << "DIMENSIONS " << (nodes-2) << " " <<  (nodes-2) << " " << (nodes-2) << std::endl;
+
+    // OUTPUT COORDS
+    print_concentrations << "X_COORDINATES " << (nodes-2) << " float" << std::endl;
+    double dx = h;
+    int cnt = 1;
+    for (int i = 1; i < nodes-1; i++){
+        print_concentrations << dx * 1000 << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        dx += h;
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "Y_COORDINATES " << (nodes-2) << " float" << std::endl;
+    dx = h;
+    cnt = 1;
+    for (int i = 1; i < nodes-1; i++){
+        print_concentrations << dx * 1000 << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        dx += h;
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations << "Z_COORDINATES " << (nodes-2) << " float" << std::endl;
+    dx = h;
+    cnt = 1;
+    for (int i = 1; i < nodes-1; i++){
+
+        print_concentrations << dx * 1000 << " ";
+        if (cnt % 6 == 0){
+            print_concentrations << std::endl;
+        }
+        dx += h;
+        cnt++;
+    }
+    print_concentrations << std::endl;
+
+    // OUTPUT C_PI
+    print_concentrations << "POINT_DATA " << (nodes-2) * (nodes-2) * (nodes-2) << std::endl;
+    print_concentrations << "SCALARS c_PI float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+
+    // loop through all nodes
+    for (int node = 0; node < N_VOL_NODES; node++){
+        
+        // only write internal nodes
+        Node2Coord(node, current_coords); 
+        if (   current_coords[0] != 0 && current_coords[0] != (nodes-1) 
+            && current_coords[1] != 0 && current_coords[1] != (nodes-1) 
+            && current_coords[2] != 0 && current_coords[2] != (nodes-1)){
+            print_concentrations << c_PI_next[node] << " ";
+            if (cnt % 6 == 0){
+                print_concentrations << std::endl;
+            }
+            cnt++;
+        }
+    }
+    
+    print_concentrations << std::endl;
+
+    // OUTPUT C_PIDOT
+    print_concentrations << "SCALARS c_PIdot float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+
+    // loop throug all nodes
+    for (int node = 0; node < N_VOL_NODES; node++){
+
+        // only write internal nodes
+        Node2Coord(node, current_coords);
+        if (   current_coords[0] != 0 && current_coords[0] != (nodes-1)
+            && current_coords[1] != 0 && current_coords[1] != (nodes-1)
+            && current_coords[2] != 0 && current_coords[2] != (nodes-1)){
+            print_concentrations << c_PIdot_next[node] << " ";
+            if (cnt % 6 == 0){
+                print_concentrations << std::endl;
+            }
+            cnt++;
+        }
+    }
+    print_concentrations << std::endl;
+
+    // OUTPUT C_MDOT
+    print_concentrations << "SCALARS c_Mdot float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+
+    // loop through all nodes
+    for (int node = 0; node < N_VOL_NODES; node++){
+        
+        // only write internal nodes
+        Node2Coord(node, current_coords);
+        if (   current_coords[0] != 0 && current_coords[0] != (nodes-1)
+            && current_coords[1] != 0 && current_coords[1] != (nodes-1)
+            && current_coords[2] != 0 && current_coords[2] != (nodes-1)){
+            
+            print_concentrations << c_Mdot_next[node] << " ";
+            if (cnt % 6 == 0){
+                print_concentrations << std::endl;
+            }
+        }
+    }
+    print_concentrations << std::endl;
+
+    // OUTPUT C_M
+    print_concentrations << "SCALARS c_M float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+    for (int node = 0; node < N_VOL_NODES; node++){
+        
+        // only write internal nodes
+        Node2Coord(node, current_coords);
+        if (   current_coords[0] != 0 && current_coords[0] != (nodes-1)
+            && current_coords[1] != 0 && current_coords[1] != (nodes-1)
+            && current_coords[2] != 0 && current_coords[2] != (nodes-1)){
+            
+            print_concentrations << c_M_next[node] << " ";
+            if (cnt % 6 == 0){
+                print_concentrations << std::endl;
+            }
+        }
+    }
+    print_concentrations << std::endl;
+
+    // OUTPUT THETA
+    print_concentrations << "SCALARS theta float" << std::endl;
+    print_concentrations << "LOOKUP_TABLE default" << std::endl;
+    cnt = 1;
+    for (int node = 0; node < N_VOL_NODES; node++){
+
+        // only write internal nodes
+        Node2Coord(node, current_coords);
+        if (   current_coords[0] != 0 && current_coords[0] != (nodes-1)
+            && current_coords[1] != 0 && current_coords[1] != (nodes-1)
+            && current_coords[2] != 0 && current_coords[2] != (nodes-1)){
+            
+            print_concentrations << theta[node] << " ";
+            if (cnt % 6 == 0){
+                print_concentrations << std::endl;
+            }
+        }
+    }
+    print_concentrations << std::endl;
+
+    print_concentrations.close();
+}
+
+
+void Voxel::Simulate(float intensity, float t_final, double dt, int method, int print_iter){
+    /* run_simulation - updates "uv_values" vector with corresponding intensity values
+     *                  as computed by Beer-Lambert
+     *
+     *          @ param intensity: uv intensity   | W/m^2 |
+     *          @ param t_final: final sim time   |   s   |
+     *          @ param dt: time step size        |   s   |
+     *          @ param method: numerical solver -> forward_euler=0, backward_euler=1, trapezoidal=2
+     * @updateVec laserValues - intensity at each node from laser beam
+     */
+
+
+
+    // time discretization -> [0., dt, 2*dt, ..., T]
+    total_time = t_final; 
+    int N_TIME_STEPS = total_time / dt;
+    std::vector<double> total_time(N_TIME_STEPS, 0);
+    std::cout << "==================================" << std::endl;
+    std::cout << "Numerical parameters" << std::endl;
+    std::cout << "h: " << h << std::endl;
+    std::cout << "dt: " << dt << std::endl;
+    std::cout << "CFL: " << dt / h << std::endl;
+    std::cout << "\n==================================" << std::endl;
+
+    Config2File(dt); 
+
+
+    // initialize next time step values
+    std::vector<double> c_PI_next(N_VOL_NODES,    c_PI0);
+    std::vector<double> c_PIdot_next(N_VOL_NODES, 0.);
+    std::vector<double> c_Mdot_next(N_VOL_NODES,  0.);
+    std::vector<double> c_M_next(N_VOL_NODES,     c_M0);
+    std::vector<double> theta_next(N_VOL_NODES,   theta0);
+
+    ComputeRxnRateConstants();
+
+    // write initial values to files
+    Concentrations2File(0,
+                        c_PI,
+                        c_PIdot,
+                        c_Mdot,
+                        c_M,
+                        theta,
+                        0);
+    
+    AvgConcentrations2File(0,
+                           c_PI,
+                           c_PIdot,
+                           c_Mdot,
+                           c_M,
+                           theta,
+                           0);
+                           
+    // NonBoundaries2File(0,
+    //                    c_PI,
+    //                    c_PIdot,
+    //                    c_Mdot,
+    //                    c_M,
+    //                    theta,
+    //                    0, 
+    //                    current_coords);
+
+    // begin time stepping
+    double timer = 0.;
+    int file_counter = 1;
+    for (int t = 0; t < N_TIME_STEPS; t++) {
+
+        total_time[t] = timer;
+
+
+        // compute energy intensity and reaction rate constants
+        ComputeRxnRateConstants();
+
+        // solve system of equations
+        SolveSystem(c_PI_next, c_PIdot_next, c_Mdot_next, c_M_next, theta_next, intensity, dt, method);
+
+        c_PI = c_PI_next;
+        c_PIdot = c_PIdot_next;
+        c_Mdot = c_Mdot_next;
+        c_M = c_M_next;
+        theta = theta_next;
+
+        // display time
+        timer += dt;
+        if (t % 100 == 0){
+            std::cout << "iteration: " << t << " / " << N_TIME_STEPS << std::endl;
+        }
+
+        // store solution results (every 100 steps) including last time step
+        if (t % print_iter == 0 || t == N_TIME_STEPS-1){
+
+            Concentrations2File(file_counter,
+                                c_PI_next,
+                                c_PIdot_next,
+                                c_Mdot_next,
+                                c_M_next,
+                                theta_next,
+                                timer);
+            // NonBoundaries2File(file_counter,
+            //                    c_PI_next,
+            //                    c_PIdot_next,
+            //                    c_Mdot_next,
+            //                    c_M_next,
+            //                    theta_next,
+            //                    timer,
+            //                    current_coords); 
+            AvgConcentrations2File(file_counter,
+                                   c_PI_next,
+                                   c_PIdot_next,
+                                   c_Mdot_next,
+                                   c_M_next,
+                                   theta_next,
+                                   timer);
+
+            file_counter++;
+        }
+    }
+}
