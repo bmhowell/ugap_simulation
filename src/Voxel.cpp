@@ -23,8 +23,10 @@ Voxel::Voxel(int nodes_){
     // MEMBER VARIABLES
     // representative volume element RVE simulation parameters
     nodes = nodes_;                                             // | unitless|  total number of nodes
-//    t_final = t_final_;                                         // |    s    |  final simulation time
-//    dt = dt_;                                                   // |    s    |  time step discretization
+
+    // set file path
+    file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
+    // file_path = "/home/brian/Documents/berkeley/reaction_diffusion/output";      // LINUX CENTRAL COMPUTING
 
     interfacial_nodes = 1;                                      // |   ---   |  interfacial thickness parameter
     len_block = 0.00084;                                        // |    m    |  sample length
@@ -1280,7 +1282,7 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
 void Voxel::Config2File(double dt){
     
     // write to file
-    print_sim_config.open("/home/brian/Documents/berkeley/reaction_diffusion/output/sim_config/sim_config.txt");
+    print_sim_config.open(file_path + "sim_config/sim_config.txt");
     print_sim_config << "Simulation Configuration\n" << std::endl; 
 
     print_sim_config << "==================================" << std::endl;
@@ -1310,7 +1312,8 @@ void Voxel::Config2File(double dt){
 
 void Voxel::Density2File(){
     // write to file
-    print_density.open("/home/brian/Documents/berkeley/reaction_diffusion/output/density/density.vtk");
+    print_density.open(file_path + "density/density.vtk");
+
     print_density << "# vtk DataFile Version 2.0" << std::endl;
     print_density << "voxel density ugap with particles" << std::endl;
     print_density << "ASCII" << std::endl;
@@ -1475,7 +1478,7 @@ void Voxel::AvgConcentrations2File(int counter,
 
     // open file
     
-    if (counter == 0){std::string file_avg_concentrations = "/home/brian/Documents/berkeley/reaction_diffusion/output/python_plotting/avg_concentration.csv";
+    if (counter == 0){std::string file_avg_concentrations = file_path + "python_plotting/avg_concentration.csv";
         print_avg_concentrations.open(file_avg_concentrations);
         print_avg_concentrations << "time, avg_top_cPI, avg_tot_cPI, avg_bot_cPI, ";
         print_avg_concentrations <<       "avg_top_cPIdot, avg_tot_cPIdot, avg_bot_cPIdot, "; 
@@ -1512,7 +1515,7 @@ void Voxel::Concentrations2File(int counter,
 
 
     // write to file
-    std::string file_name = "/home/brian/Documents/berkeley/reaction_diffusion/output/concentrations_t" + std::to_string(counter) + ".vtk";
+    std::string file_name = file_path + "concentrations_t" + std::to_string(counter) + ".vtk";
     print_concentrations.open(file_name);
     print_concentrations << "# vtk DataFile Version 2.0" << std::endl;
     print_concentrations << "voxel concentration ugap with particles" << std::endl;
@@ -1637,7 +1640,7 @@ void Voxel::NonBoundaries2File( int counter,
     // writes only non-boundary nodes to file
 
     // WRITE TO FILE
-    std::string file_name = "/home/brian/Documents/berkeley/reaction_diffusion/output/concentrations_t" + std::to_string(counter) + ".vtk";
+    std::string file_name = file_path + "concentrations_t" + std::to_string(counter) + ".vtk";
     print_concentrations.open(file_name);
     print_concentrations << "# vtk DataFile Version 2.0" << std::endl;
     print_concentrations << "voxel concentration ugap with particles" << std::endl;

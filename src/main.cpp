@@ -1,8 +1,9 @@
 //
-// UGAP voxel code CPP FAST
-// Created by Brian Howell on 11/22
+// reaction diffusion simulation of urethane grafted acrylate 
+// polymer resins with custom additive particles for 3D printing.
+// Created by Brian Howell on 02/24/23
 // MSOL UC Berkeley
-//
+// bhowell@berkeley.edu
 
 #include <iostream>
 #include "Voxel.h"

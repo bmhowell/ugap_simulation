@@ -9,6 +9,7 @@
 #include <random>
 #include <vector>
 #include <algorithm>
+// #include <string>
 
 #ifndef UGAPDIFFUSION_VOXEL_H
 #define UGAPDIFFUSION_VOXEL_H
@@ -18,9 +19,13 @@ class Voxel {
 
 private:
     // MEMBER VARIABLES
+    
+    // output file path
+    std::string file_path;                                  // set correct file path to output dependent on computer
+
     // simulation parameters
     int nodes;
-    float total_time;                                               // | unitless|  total number of nodes
+    float total_time;                                       // | unitless|  total number of nodes
     float coord_map_const;
 //    float t_final;                                          // |    s    |  final simulation time
 //    double dt;                                              // |    s    |  time step discretization
