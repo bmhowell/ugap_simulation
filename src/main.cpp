@@ -13,13 +13,13 @@ int main() {
         coarse simulation:
             - node = 21
             - dt   = 1e-3
-            - VoxelSystem1.Simulate(10.0, TFINAL, DT, 1, 100);
+            - VoxelSystem1.Simulate(10.0, TFINAL, DT, 1);
             - outputs 300 .vtk concentration files
 
         fine simulation
             - node = 51
             - dt   = 5e-5
-            - VoxelSystem1.Simulate(10.0, TFINAL, DT, 1, 1000);
+            - VoxelSystem1.Simulate(10.0, TFINAL, DT, 1);
             - outputs 600 .vtk concentration files
             
     */
@@ -36,7 +36,7 @@ int main() {
     VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
     VoxelSystem1.Density2File();
 
-    VoxelSystem1.Simulate(10.0, TFINAL, DT, 1, 100);
+    VoxelSystem1.Simulate(10.0, TFINAL, DT, 1);
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = (std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count() / 1e6;

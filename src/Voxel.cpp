@@ -25,8 +25,8 @@ Voxel::Voxel(int nodes_){
     nodes = nodes_;                                             // | unitless|  total number of nodes
 
     // set file path
-    file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
-    // file_path = "/home/brian/Documents/berkeley/reaction_diffusion/output";      // LINUX CENTRAL COMPUTING
+    // file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
+    file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
 
     interfacial_nodes = 1;                                      // |   ---   |  interfacial thickness parameter
     len_block = 0.00084;                                        // |    m    |  sample length
@@ -1801,7 +1801,7 @@ void Voxel::NonBoundaries2File( int counter,
 }
 
 
-void Voxel::Simulate(float intensity, float t_final, double dt, int method, int print_iter){
+void Voxel::Simulate(float intensity, float t_final, double dt, int method){
     /* run_simulation - updates "uv_values" vector with corresponding intensity values
      *                  as computed by Beer-Lambert
      *
@@ -1817,6 +1817,7 @@ void Voxel::Simulate(float intensity, float t_final, double dt, int method, int 
     // time discretization -> [0., dt, 2*dt, ..., T]
     total_time = t_final; 
     int N_TIME_STEPS = total_time / dt;
+    int print_iter = N_TIME_STEPS / 600; 
     std::vector<double> total_time(N_TIME_STEPS, 0);
     std::cout << "==================================" << std::endl;
     std::cout << "Numerical parameters" << std::endl;

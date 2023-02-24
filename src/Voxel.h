@@ -265,7 +265,7 @@ public:
                             int (&coords)[3]);
 
 
-    void Simulate(float intensity, float t_final, double dt, int method, int print_iter);
+    void Simulate(float intensity, float t_final, double dt, int method);
         // Simulate - runs simulation of UV curing kinetics
 
 };

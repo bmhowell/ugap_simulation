@@ -1,0 +1,19 @@
+Simulation Configuration
+
+==================================
+Initial concentrations (mol/m^3): 
+c_M0: 1568.9
+c_PI0: 146.409
+theta0 303.15
+==================================
+
+Numerical parameters
+h: 4.2e-05
+dt: 0.001
+CFL: 23.8095
+
+==================================
+solids loading: 0.369615
+particles_ind.size(): 3423
+
+==================================
