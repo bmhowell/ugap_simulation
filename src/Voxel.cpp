@@ -5,6 +5,7 @@
 /*
  *
  *   CURRENTLY WORKING ON:
+ *      - add UV timer
  *      - figure out what is going on with k_i and k_t
  *      - use switch for time stepping scheme
  *      - move things to the heap
