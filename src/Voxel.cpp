@@ -26,8 +26,8 @@ Voxel::Voxel(int nodes_){
     nodes = nodes_;                                             // | unitless|  total number of nodes
 
     // set file path
-    // file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
-    file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
+    file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
+    // file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
 
     interfacial_nodes = 1;                                      // |   ---   |  interfacial thickness parameter
     len_block = 0.00084;                                        // |    m    |  sample length
@@ -71,7 +71,8 @@ Voxel::Voxel(int nodes_){
     c_NaCl = 37241.4;                                           // | mol/m^3 | concentration of NaCl
 
     // diffusion properties
-    Dm0 = 1.08e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (taki lit.)
+    // Dm0 = 1.08e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (taki lit.)
+    Dm0 = 2.36e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (shanna lit.)
     Am = 0.66;                                                  // | unitless| diffusion constant parameter, monomer (shanna lit.)
 
     // bowman reaction parameters
@@ -434,6 +435,7 @@ double Voxel::PIdotRate(std::vector<double> &conc_PIdot,
         diff_pdot[node] = diffuse; 
 
         return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i*conc_PIdot[node]*conc_M[node] + diffuse);
+        // return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i*conc_PIdot[node]*conc_M[node]);
     }
     
     else if (material_type[node] == 2){
@@ -478,6 +480,7 @@ double Voxel::MdotRate(std::vector<double> &conc_Mdot,
 
         diff_mdot[node] = term3;
         return (term1 - term2 + term3);
+        // return (term1 - term2);
     } 
     
     else if (material_type[node] == 2){
@@ -512,7 +515,7 @@ double Voxel::MRate(std::vector<double> &conc_M,
         
 
         consume =   (k_p[node]*conc_Mdot[node]*conc_M[node])
-                + (k_i*conc_PIdot[node]*conc_M[node]);
+                  + (k_i*conc_PIdot[node]*conc_M[node]);
 
         diffuse = Dm0 * exp(-Am / f_free_volume[node])
                   * (            conc_M[node - N_PLANE_NODES]
