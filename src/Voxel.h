@@ -66,7 +66,8 @@ private:
     float mol_M;                                              // |   mol   | required monomer for basis weight
     float c_M0;                                               // | mol/m^3 | inital concentration of monomer
     float c_PI0;                                              // | mol/m^3 | inital concentration of photoinitiator
-
+    float c_NaCl;                                            // | mol/m^3 | concentration of NaCl
+    
     // diffusion parameters
     double Dm0;                                               // |  m^2/s  | diffusion constant pre-exponential, monomer (taki lit.)
     float Am;                                                 // | unitless| diffusion constant parameter, monomer (shanna lit.)

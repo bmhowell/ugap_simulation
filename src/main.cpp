@@ -24,8 +24,8 @@ int main() {
             
     */
 
-    const int NODE = 51;
-    const double DT = 1 * pow(10, -5);
+    const int NODE = 21;
+    const double DT = 1 * pow(10, -3);
     // const int NODE = 21;
     // const double DT = 1 * pow(10, -3);
     double TFINAL = 30.;

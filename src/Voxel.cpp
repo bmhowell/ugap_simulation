@@ -68,6 +68,7 @@ Voxel::Voxel(int nodes_){
     mol_M = basis_wt * percent_M / mw_M;                        // |   mol   | required monomer for basis weight
     c_M0 = mol_M / basis_vol;                                   // | mol/m^3 | initial concentration of monomer
     c_PI0 = mol_PI / basis_vol;                                 // | mol/m^3 | initial concentration of photoinitiator
+    c_NaCl = 37241.4;                                           // | mol/m^3 | concentration of NaCl
 
     // diffusion properties
     Dm0 = 1.08e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (taki lit.)
@@ -560,10 +561,33 @@ double Voxel::TempRate(std::vector<double> &temperature,
                    );
 
     heat_rxn = k_p[node] * conc_M[node] * conc_Mdot[node] * dHp;
+
+    // if (material_type[node] == 1){
+    //     // material is resin
+    //     heat_uv = eps
+    //             * intensity
+    //             * conc_PI[node]
+    //             * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  );
+    // }
+    // else if (material_type[node] == 2){
+    //     // material is interface
+    //     heat_uv = eps
+    //             * intensity
+    //             * (conc_PI[node] + c_NaCl) / 2 
+    //             * exp(  -eps*(conc_PI[node] + c_NaCl)/2*(len_block-current_coords[2]*coord_map_const)  );
+    // }
+    // else{
+    //     // material is particle
+    //     heat_uv = eps
+    //             * intensity
+    //             * c_NaCl
+    //             * exp(  -eps*c_NaCl*(len_block-current_coords[2]*coord_map_const)  );
+    // }
     heat_uv = eps
-              * intensity
-              * conc_PI[node]
-              * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  );
+                * intensity
+                * conc_PI[node]
+                * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  );
+
     diff_theta[node] = heat_diffuse;
     return (heat_diffuse + heat_rxn + heat_uv) / density[node] / heat_capacity[node];
 };
