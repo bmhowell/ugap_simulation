@@ -67,7 +67,7 @@ private:
     float c_M0;                                               // | mol/m^3 | inital concentration of monomer
     float c_PI0;                                              // | mol/m^3 | inital concentration of photoinitiator
     float c_NaCl;                                            // | mol/m^3 | concentration of NaCl
-    
+
     // diffusion parameters
     double Dm0;                                               // |  m^2/s  | diffusion constant pre-exponential, monomer (taki lit.)
     float Am;                                                 // | unitless| diffusion constant parameter, monomer (shanna lit.)
@@ -114,10 +114,6 @@ private:
     int thresh;
 
     // initialize cube_coord, nonboundary_nodes and boundary_nodes
-    std::vector< std::vector<double> > cube_coord;
-    std::vector< std::vector< std::vector<int> > > cube_nodes;
-    std::vector< std::vector<int> > boundary_nodes;
-    std::vector<int> nonboundary_nodes;
     int current_coords[3]; 
 
     // initialize material properties and uv energy

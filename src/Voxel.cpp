@@ -71,8 +71,8 @@ Voxel::Voxel(int nodes_){
     c_NaCl = 37241.4;                                           // | mol/m^3 | concentration of NaCl
 
     // diffusion properties
-    // Dm0 = 1.08e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (taki lit.)
-    Dm0 = 2.36e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (shanna lit.)
+    Dm0 = 1.08e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (taki lit.)
+    // Dm0 = 2.36e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (shanna lit.)
     Am = 0.66;                                                  // | unitless| diffusion constant parameter, monomer (shanna lit.)
 
     // bowman reaction parameters
@@ -377,15 +377,15 @@ void Voxel::ComputeRxnRateConstants() {
             k_p[i] = k_P0*exp(-E_P / Rg / theta[i]) / (1 + exp(A_Dp * (1/f_free_volume[i] - 1/f_cp)));
 
             // bowman (1) equation 18
-            k_tr = R_rd * k_p[i] * c_M[i];
-            denom = (k_tr / (k_T0*exp(-E_T/Rg/theta[i])) + exp(-A_Dt*(1/f_free_volume[i] - 1/f_ct)));
+            k_tr   = R_rd * k_p[i] * c_M[i];
+            denom  = (k_tr / (k_T0*exp(-E_T/Rg/theta[i])) + exp(-A_Dt*(1/f_free_volume[i] - 1/f_ct)));
             k_t[i] = k_T0*exp(-E_T/Rg/theta[i]) / (1+1/denom);
 
         }else{
             // compute reaction rate constants for particles
             f_free_volume[i] = 0.;
-            k_t[i] = 0.;
-            k_p[i] = 0.;
+            k_t[i]           = 0.;
+            k_p[i]           = 0.;
         };
     }
 }
@@ -394,6 +394,7 @@ void Voxel::ComputeRxnRateConstants() {
 double Voxel::IRate(std::vector<double> &conc_PI, double I0, double z, int node) const {
     if (material_type[node] == 1){
         // material is ugap
+        // return (-phi * eps * I0 * conc_PI[node] * exp( -eps*conc_PI[node]*z) / 2);
         return (-phi * eps * I0 * conc_PI[node] * exp( -eps*conc_PI[node]*z) / 2);
     }
     
@@ -435,7 +436,6 @@ double Voxel::PIdotRate(std::vector<double> &conc_PIdot,
         diff_pdot[node] = diffuse; 
 
         return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i*conc_PIdot[node]*conc_M[node] + diffuse);
-        // return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i*conc_PIdot[node]*conc_M[node]);
     }
     
     else if (material_type[node] == 2){
@@ -565,27 +565,6 @@ double Voxel::TempRate(std::vector<double> &temperature,
 
     heat_rxn = k_p[node] * conc_M[node] * conc_Mdot[node] * dHp;
 
-    // if (material_type[node] == 1){
-    //     // material is resin
-    //     heat_uv = eps
-    //             * intensity
-    //             * conc_PI[node]
-    //             * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  );
-    // }
-    // else if (material_type[node] == 2){
-    //     // material is interface
-    //     heat_uv = eps
-    //             * intensity
-    //             * (conc_PI[node] + c_NaCl) / 2 
-    //             * exp(  -eps*(conc_PI[node] + c_NaCl)/2*(len_block-current_coords[2]*coord_map_const)  );
-    // }
-    // else{
-    //     // material is particle
-    //     heat_uv = eps
-    //             * intensity
-    //             * c_NaCl
-    //             * exp(  -eps*c_NaCl*(len_block-current_coords[2]*coord_map_const)  );
-    // }
     heat_uv = eps
                 * intensity
                 * conc_PI[node]
@@ -1412,13 +1391,16 @@ void Voxel::AvgConcentrations2File(int counter,
                                    double time){
     
     // compute average top concentration
-    double avg_top_cPI = 0, avg_tot_cPI = 0, avg_bot_cPI = 0; 
-    double avg_top_cPIdot = 0, avg_tot_cPIdot = 0, avg_bot_cPIdot = 0;
-    double avg_top_cMdot = 0, avg_tot_cMdot = 0, avg_bot_cMdot = 0;
-    double avg_top_cM = 0, avg_tot_cM = 0, avg_bot_cM = 0;
-    double avg_top_theta = 0, avg_tot_theta = 0, avg_bot_theta = 0;
-    double avg_free_volume = 0, avg_k_p = 0, avg_k_t = 0;
-    double avg_diff_pdot = 0, avg_diff_mdot = 0, avg_diff_m = 0, avg_diff_theta = 0; 
+    double avg_top_cPI = 0,        avg_tot_cPI = 0,    avg_bot_cPI = 0; 
+    double avg_top_cPIdot = 0,     avg_tot_cPIdot = 0, avg_bot_cPIdot = 0;
+    double avg_top_cMdot = 0,      avg_tot_cMdot = 0,  avg_bot_cMdot = 0;
+    double avg_top_cM = 0,         avg_tot_cM = 0,     avg_bot_cM = 0;
+    double avg_top_theta = 0,      avg_tot_theta = 0,  avg_bot_theta = 0;
+    double avg_free_volume = 0,    avg_k_p = 0,        avg_k_t = 0;
+    double avg_diff_pdot_top = 0,  avg_diff_pdot = 0,  avg_diff_pdot_bot = 0; 
+    double avg_diff_mdot_top = 0,  avg_diff_mdot = 0,  avg_diff_mdot_bot = 0; 
+    double avg_diff_m_top = 0,     avg_diff_m = 0,     avg_diff_m_bot = 0; 
+    double avg_diff_theta_top = 0, avg_diff_theta = 0, avg_diff_theta_bot = 0; 
     
     // compute average top, total and bottom concentration, and then write to file
     
@@ -1430,6 +1412,16 @@ void Voxel::AvgConcentrations2File(int counter,
         // compute average temperature related values over all nodes
         avg_diff_theta  += diff_theta[node];
         avg_tot_theta   += theta_next[node];
+
+        // compute average diffusivity of temperature top and bottom nodes
+        if (N_PLANE_NODES < node && node < 2 * N_PLANE_NODES){
+            avg_diff_theta_bot += diff_theta[node];
+            
+        }
+        if (N_VOL_NODES - N_PLANE_NODES > node && node > N_VOL_NODES - 2 * N_PLANE_NODES){
+            avg_diff_theta_top += diff_theta[node];
+            
+        }
 
         // compute average reaction related values over resin nodes
         if (material_type[node] == 1){
@@ -1456,7 +1448,17 @@ void Voxel::AvgConcentrations2File(int counter,
                 avg_bot_cM      += c_M_next[node];
                 // avg_bot_theta += theta_next[node];
                 
+                
+                
                 nodes_bot_resin++; 
+                
+            }
+
+            if (node < 2 * N_PLANE_NODES && node > N_PLANE_NODES){
+                // diffusive terms
+                avg_diff_pdot_bot  += diff_pdot[node];
+                avg_diff_mdot_bot  += diff_mdot[node];
+                avg_diff_m_bot     += diff_m[node];
                 
             }
 
@@ -1467,8 +1469,14 @@ void Voxel::AvgConcentrations2File(int counter,
                 avg_top_cMdot   += c_Mdot_next[node];
                 avg_top_cM      += c_M_next[node];
                 // avg_top_theta += theta_next[node];
-
                 nodes_top_resin++;
+            }
+
+            if (node < N_VOL_NODES - N_PLANE_NODES && node > N_VOL_NODES - 2 * N_PLANE_NODES){
+                // diffusive terms
+                avg_diff_pdot_top  += diff_pdot[node];
+                avg_diff_mdot_top  += diff_mdot[node];
+                avg_diff_m_top     += diff_m[node];
             }
             
             nodes_resin++;
@@ -1497,9 +1505,21 @@ void Voxel::AvgConcentrations2File(int counter,
     avg_k_t         /= nodes_resin;
 
     avg_diff_pdot   /= nodes_resin;
+    avg_diff_pdot_top  /= nodes_top_resin;
+    avg_diff_pdot_bot  /= nodes_bot_resin;
+    
     avg_diff_mdot   /= nodes_resin;
+    avg_diff_mdot_top  /= nodes_top_resin;
+    avg_diff_mdot_bot  /= nodes_bot_resin;    
+
     avg_diff_m      /= nodes_resin;
+    avg_diff_m_top     /= nodes_top_resin;
+    avg_diff_m_bot     /= nodes_bot_resin;
+
     avg_diff_theta  /= N_VOL_NODES;
+    avg_diff_theta_top /= N_VOL_NODES;
+    avg_diff_theta_bot /= N_VOL_NODES;
+
 
     // avg_bot_theta /= N_PLANE_NODES;
     // avg_top_theta /= N_PLANE_NODES;
@@ -1514,7 +1534,11 @@ void Voxel::AvgConcentrations2File(int counter,
         print_avg_concentrations <<       "avg_top_cM, avg_tot_cM, avg_bot_cM, "; 
         print_avg_concentrations <<       "avg_tot_theta, "; 
         print_avg_concentrations <<       "avg_free_volume, avg_k_p, avg_k_t, ";
-        print_avg_concentrations <<       "avg_diff_pdot, avg_diff_mdot, avg_diff_m, avg_diff_theta" << std::endl;
+        print_avg_concentrations <<       "avg_diff_pdot_top, avg_diff_pdot, avg_diff_pdot_bot, ";
+        print_avg_concentrations <<       "avg_diff_mdot_top, avg_diff_mdot, avg_diff_mdot_bot, ";
+        print_avg_concentrations <<       "avg_diff_m_top, avg_diff_m, avg_diff_m_bot, ";
+        print_avg_concentrations <<       "avg_diff_theta_top, avg_diff_theta, avg_diff_theta_bot" << std::endl;
+        // print_avg_concentrations <<       "avg_diff_pdot, avg_diff_mdot, avg_diff_m, avg_diff_theta" << std::endl;
 
     }
 
@@ -1524,7 +1548,12 @@ void Voxel::AvgConcentrations2File(int counter,
     print_avg_concentrations << avg_top_cMdot << ", " << avg_tot_cMdot << ", " << avg_bot_cMdot << ", ";
     print_avg_concentrations << avg_top_cM << ", " << avg_tot_cM << ", " << avg_bot_cM << ", ";
     print_avg_concentrations << avg_tot_theta << ", " << avg_free_volume << ", " << avg_k_t << ", " << avg_k_p << ", "; 
-    print_avg_concentrations << avg_diff_pdot << ", " << avg_diff_mdot << ", " << avg_diff_m << ", " << avg_diff_theta << std::endl;
+    print_avg_concentrations << avg_diff_pdot_top << ", " << avg_diff_pdot << ", " << avg_diff_pdot_bot << ", ";
+    print_avg_concentrations << avg_diff_mdot_top << ", " << avg_diff_mdot << ", " << avg_diff_mdot_bot << ", ";
+    print_avg_concentrations << avg_diff_m_top << ", " << avg_diff_m << ", " << avg_diff_m_bot << ", ";
+    print_avg_concentrations << avg_diff_theta_top << ", " << avg_diff_theta << ", " << avg_diff_theta_bot << std::endl;
+
+    // print_avg_concentrations << avg_diff_pdot << ", " << avg_diff_mdot << ", " << avg_diff_m << ", " << avg_diff_theta << std::endl;
     
     if (time == 30.0){
         std::cout << "--- COMPLETE ---" << std::endl;
