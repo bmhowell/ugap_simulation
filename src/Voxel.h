@@ -107,6 +107,7 @@ private:
 
     // photo initiator properties
     float eps;                                                // |m^3/mol m| initiator absorbtivity
+    float eps_nacl;                                           // |m^3/mol m| NaCl absorbtivity
     float phi;                                                // | unitless| quantum yield inititation
 
     // numerical method parameters: backward euler
@@ -217,10 +218,11 @@ public:
                  int node);
 
     // equation 5
-    double TempRate(std::vector<double> &temperature,
+    double TempRate(std::vector<double>     &temperature,
                         std::vector<double> &conc_M,
                         std::vector<double> &conc_Mdot,
                         std::vector<double> &conc_PI,
+                        std::vector<double> &conc_PIdot,
                         double intensity, int node);
 
     // solve system simultaneously

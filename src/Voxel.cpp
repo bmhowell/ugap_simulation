@@ -94,17 +94,17 @@ Voxel::Voxel(int nodes_){
     k_i = 4.8e-5;                                               // |  s^-1   | primary radical rate constant (taki lit.)
 
     // thermal properties
-    theta0 = 303.15;                                            // |    K    | initial and ambient temperature
-    dHp = 54.8e3;                                               // |  W/mol  | heat of polymerization of acrylate monomers
-    Cp_nacl = 880;                                              // | J/kg/K  | heat capacity of NaCl
-    Cp_pea = 180.3;                                             // | J/mol/K | heat capacity of PEA @ 298K - https://polymerdatabase.com/polymer%20physics/Cp%20Table.html
-    Cp_pea /= mw_PEA;                                           // | J/kg/K  | convert units
-    Cp_hdda = 202.9;                                            // | J/mol/K | solid heat capacity of HDDA - https://webbook.nist.gov/cgi/cbook.cgi?ID=C629118&Units=SI&Mask=1F
-    Cp_hdda /= mw_HDDA;                                         // | J/kg/K  | convert units
-    K_thermal_nacl = 0.069;                                        // | W/m/K   | thermal conductivity
+    theta0         = 303.15;                                    // |    K    | initial and ambient temperature
+    dHp            = 5.48e4;                                    // |  W/mol  | heat of polymerization of acrylate monomers (shanna + bowman lit.)
+    Cp_nacl        = 880;                                       // | J/kg/K  | heat capacity of NaCl
+    Cp_pea         = 180.3;                                     // | J/mol/K | heat capacity of PEA @ 298K - https://polymerdatabase.com/polymer%20physics/Cp%20Table.html
+    Cp_pea        /= mw_PEA;                                    // | J/kg/K  | convert units
+    Cp_hdda        = 202.9;                                     // | J/mol/K | solid heat capacity of HDDA - https://webbook.nist.gov/cgi/cbook.cgi?ID=C629118&Units=SI&Mask=1F
+    Cp_hdda       /= mw_HDDA;                                   // | J/kg/K  | convert units
+    K_thermal_nacl = 0.069;                                     // | W/m/K   | thermal conductivity
 
 //    // SHANNA PARAMS
-    Cp_shanna = 1700;                                           // | J/kg/K  | shanna's heat capacity
+    Cp_shanna        = 1700;                                    // | J/kg/K  | shanna's heat capacity
     K_thermal_shanna = 0.2;                                     // | W/m/K   | shanna's thermal conductivity
 //    shanna_c_PI0 = 150;                                         // | mol/m^3 | initial PI concentration
 //    shanna_c_M0 = 8250;                                         // | mol/m^3 | initial monomer concentration
@@ -112,8 +112,9 @@ Voxel::Voxel(int nodes_){
 //    shanna_mw_PI = 256.301e-3;                                  // | mol/kg  | mw of PI
 
     // photo initiator properties
-    eps = 9.66e-1;                                              // |m^3/mol m| initiator absorbtivity
-    phi = 0.6;                                                  // | unitless| quantum yield inititation
+    eps      = 9.66e-1;                                         // |m^3/mol m| initiator absorbtivity
+    eps_nacl = 7e-4;                                            // |   1/m   | NaCl absorbtivity
+    phi      = 0.6;                                             // | unitless| quantum yield inititation
 
     // numerical method parameters: backward euler
     tol = 5e-2;
@@ -546,6 +547,7 @@ double Voxel::TempRate(std::vector<double> &temperature,
                            std::vector<double> &conc_M,
                            std::vector<double> &conc_Mdot,
                            std::vector<double> &conc_PI,
+                           std::vector<double> &conc_PIdot,
                            double intensity, int node){
     /*
         equation 5
@@ -563,7 +565,11 @@ double Voxel::TempRate(std::vector<double> &temperature,
                          +     temperature[node + 1]
                    );
 
-    heat_rxn = k_p[node] * conc_M[node] * conc_Mdot[node] * dHp;
+    heat_rxn = (  k_i * conc_PIdot[node] * conc_M[node]
+                + k_p[node] * conc_M[node] * conc_Mdot[node] 
+                + k_t[node] * conc_Mdot[node] * conc_Mdot[node]
+                ) * dHp;
+    // heat_rxn = (k_p[node] * conc_M[node] * conc_Mdot[node] ) * dHp;
 
     heat_uv = eps
                 * intensity
@@ -606,7 +612,7 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                 c_PIdot_next[node] = c_PIdot[node] + dt*PIdotRate(c_PIdot, c_PI, c_M, I0, depth, node); 
                 c_Mdot_next[node] = c_Mdot[node] + dt*MdotRate(c_Mdot, c_PIdot, c_M, node); 
                 c_M_next[node] = c_Mdot[node] + dt*MRate(c_M, c_Mdot, c_PIdot, node); 
-                theta_next[node] = theta[node] + dt*TempRate(theta, c_M, c_Mdot, c_PI, I0, node);
+                theta_next[node] = theta[node] + dt*TempRate(theta, c_M, c_Mdot, c_PI, c_PIdot, I0, node);
                     }
             // BOUNDARY NODES
             else if (   current_coords[0] == 0 or current_coords[0] == (nodes-1)
@@ -811,6 +817,7 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                                                                 c_M_0,
                                                                 c_Mdot_0,
                                                                 c_PI_0,
+                                                                c_PIdot, 
                                                                 I0, node);
                     err_step += SquaredDiff(theta_0[node], theta_1[node]);
                 }
@@ -1083,8 +1090,8 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                     err_step += SquaredDiff(c_M_0[node], c_M_1[node]);
 
                     // solve equation 5
-                    theta_1[node] = theta[node] + dt* (   (1-psi) * TempRate(theta_0, c_M_0, c_Mdot_0, c_PI_0, I0, node)
-                                                        +   psi   * TempRate(theta, c_M, c_Mdot, c_PI, I0, node));
+                    theta_1[node] = theta[node] + dt* (   (1-psi) * TempRate(theta_0, c_M_0, c_Mdot_0, c_PI_0, c_PIdot, I0, node)
+                                                        +   psi   * TempRate(theta, c_M, c_Mdot, c_PI, c_PIdot, I0, node));
 
                     err_step += SquaredDiff(theta_0[node], theta_1[node]);
 
