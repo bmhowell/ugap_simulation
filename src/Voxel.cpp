@@ -91,11 +91,11 @@ Voxel::Voxel(int nodes_){
     f_ct = 5.81e-2;                                             // | unitless| critical free volume, termination (taki lit.)
     R_rd = 11;                                                  // |  1/mol  | reaction diffusion parameter (taki lit.)
 
-    k_i = 4.8e-5;                                               // |  s^-1   | primary radical rate constant (taki lit.)
+    k_i = 4.8e-5;                                               // |m^3/mol s| primary radical rate constant (taki lit.)
 
     // thermal properties
     theta0         = 303.15;                                    // |    K    | initial and ambient temperature
-    dHp            = 5.48e4;                                    // |  W/mol  | heat of polymerization of acrylate monomers (shanna + bowman lit.)
+    dHp            = 5.48e4;                                    // |  J/mol  | heat of polymerization of acrylate monomers (bowman lit.)
     Cp_nacl        = 880;                                       // | J/kg/K  | heat capacity of NaCl
     Cp_pea         = 180.3;                                     // | J/mol/K | heat capacity of PEA @ 298K - https://polymerdatabase.com/polymer%20physics/Cp%20Table.html
     Cp_pea        /= mw_PEA;                                    // | J/kg/K  | convert units
@@ -423,8 +423,19 @@ double Voxel::PIdotRate(std::vector<double> &conc_PIdot,
     */
     if (material_type[node] == 1){
         // material is ugap
-        double diffuse; 
-        diffuse = Dm0 * exp(-Am / f_free_volume[node])
+        double diffuse, Dm_avg;
+
+        // average diffusion coefficient
+        Dm_avg = Dm0 * (  exp(-Am / f_free_volume[node - N_PLANE_NODES])
+                        + exp(-Am / f_free_volume[node - nodes])
+                        + exp(-Am / f_free_volume[node - 1])
+                        + 6 * exp(-Am / f_free_volume[node])
+                        + exp(-Am / f_free_volume[node + N_PLANE_NODES])
+                        + exp(-Am / f_free_volume[node + nodes])
+                        + exp(-Am / f_free_volume[node + 1])
+                        ) / 12.;
+                        
+        diffuse = Dm_avg
                         * (       conc_PIdot[node - 1]
                             +     conc_PIdot[node - nodes]
                             +     conc_PIdot[node - N_PLANE_NODES]
@@ -466,10 +477,21 @@ double Voxel::MdotRate(std::vector<double> &conc_Mdot,
 
     if (material_type[node] == 1){
         // material is resin
-        double term1, term2, term3;
+        double term1, term2, term3, Dm_avg;
         term1 = k_i*c_PIdot[node]*c_M[node];
         term2 = k_t[node]*conc_Mdot[node]*conc_Mdot[node];
-        term3 = Dm0 * exp(-Am / f_free_volume[node])
+
+        // average diffusion coefficient
+        Dm_avg = Dm0 * (  exp(-Am / f_free_volume[node - N_PLANE_NODES])
+                        + exp(-Am / f_free_volume[node - nodes])
+                        + exp(-Am / f_free_volume[node - 1])
+                        + 6 * exp(-Am / f_free_volume[node])
+                        + exp(-Am / f_free_volume[node + N_PLANE_NODES])
+                        + exp(-Am / f_free_volume[node + nodes])
+                        + exp(-Am / f_free_volume[node + 1])
+                        ) / 12.;
+
+        term3 = Dm_avg
                   * (            conc_Mdot[node - N_PLANE_NODES]
                            +     conc_Mdot[node - nodes]
                            +     conc_Mdot[node - 1]
@@ -507,18 +529,27 @@ double Voxel::MRate(std::vector<double> &conc_M,
 
          d[M]/dt = ∇(k∇_x [M]) - k[PI][M] - k[M][Mdot]   
     */
-    double diffuse, consume;
-
     
 
     if (material_type[node] == 1){
         // material is resin
-        
+        double diffuse, consume, Dm_avg;
 
         consume =   (k_p[node]*conc_Mdot[node]*conc_M[node])
                   + (k_i*conc_PIdot[node]*conc_M[node]);
 
-        diffuse = Dm0 * exp(-Am / f_free_volume[node])
+        // Dm_avg = Dm0 * (exp(-Am / f_free_volume[node - N_PLane]) )
+        
+        // average diffusion coefficient
+        Dm_avg = Dm0 * (  exp(-Am / f_free_volume[node - N_PLANE_NODES])
+                        + exp(-Am / f_free_volume[node - nodes])
+                        + exp(-Am / f_free_volume[node - 1])
+                        + 6 * exp(-Am / f_free_volume[node])
+                        + exp(-Am / f_free_volume[node + N_PLANE_NODES])
+                        + exp(-Am / f_free_volume[node + nodes])
+                        + exp(-Am / f_free_volume[node + 1])
+                        ) / 12.; 
+        diffuse = Dm_avg
                   * (            conc_M[node - N_PLANE_NODES]
                            +     conc_M[node - nodes]
                            +     conc_M[node - 1]
@@ -544,40 +575,74 @@ double Voxel::MRate(std::vector<double> &conc_M,
 
 
 double Voxel::TempRate(std::vector<double> &temperature,
-                           std::vector<double> &conc_M,
-                           std::vector<double> &conc_Mdot,
-                           std::vector<double> &conc_PI,
-                           std::vector<double> &conc_PIdot,
-                           double intensity, int node){
+                       std::vector<double> &conc_M,
+                       std::vector<double> &conc_Mdot,
+                       std::vector<double> &conc_PI,
+                       std::vector<double> &conc_PIdot,
+                       double intensity, int node){
     /*
         equation 5
          dθ/dt = ( ∇_x·(K ∇_x θ) + k_p [M] [M_n·] ΔH + ε [PI] I ) / ρ / C     
     */
     double heat_diffuse, heat_rxn, heat_uv;
+    double therm_cond_avg[6]; 
 
-    heat_diffuse = therm_cond[node] / h / h
-                   * (         temperature[node - N_PLANE_NODES]
-                         +     temperature[node - nodes]
-                         +     temperature[node - 1]
-                         - 6 * temperature[node]
-                         +     temperature[node + N_PLANE_NODES]
-                         +     temperature[node + nodes]
-                         +     temperature[node + 1]
-                   );
+    // compute average thermal conductivity values for each first order derivative
+    therm_cond_avg[0] = 0.5 * (therm_cond[node+1]             + therm_cond[node]);
+    therm_cond_avg[1] = 0.5 * (therm_cond[node-1]             + therm_cond[node]);
+    therm_cond_avg[2] = 0.5 * (therm_cond[node+nodes]         + therm_cond[node]);
+    therm_cond_avg[3] = 0.5 * (therm_cond[node-nodes]         + therm_cond[node]);
+    therm_cond_avg[4] = 0.5 * (therm_cond[node+N_PLANE_NODES] + therm_cond[node]);
+    therm_cond_avg[5] = 0.5 * (therm_cond[node-N_PLANE_NODES] + therm_cond[node]);
 
-    heat_rxn = (  k_i * conc_PIdot[node] * conc_M[node]
-                + k_p[node] * conc_M[node] * conc_Mdot[node] 
-                + k_t[node] * conc_Mdot[node] * conc_Mdot[node]
-                ) * dHp;
+    // compute thermal diffusion taking into account the average thermal properties
+    double denom = 1 / h / h / density[node] / heat_capacity[node];
+    heat_diffuse = (  therm_cond_avg[0]*(temperature[node+1]-temperature[node]) 
+                    - therm_cond_avg[1]*(temperature[node]-temperature[node-1])
+                    + therm_cond_avg[2]*(temperature[node+nodes]-temperature[node])
+                    - therm_cond_avg[3]*(temperature[node]-temperature[node-nodes])
+                    + therm_cond_avg[4]*(temperature[node+N_PLANE_NODES]-temperature[node])
+                    - therm_cond_avg[5]*(temperature[node]-temperature[node-N_PLANE_NODES])
+                    ) * denom; 
+
+    // compute the heat release by all exothermic (bond formation) reactions
     // heat_rxn = (k_p[node] * conc_M[node] * conc_Mdot[node] ) * dHp;
+    heat_rxn = (  k_i       * conc_PIdot[node] * conc_M[node]
+                + k_p[node] * conc_Mdot[node]  * conc_M[node]
+                + k_t[node] * conc_Mdot[node]  * conc_Mdot[node]
+                ) * dHp;
 
-    heat_uv = eps
+    if (material_type[node] == 1){
+        // material is resin
+        heat_uv = eps
                 * intensity
                 * conc_PI[node]
                 * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  );
+    }
+    else if (material_type[node] == 2){
+        // material is interface
+        heat_uv = (   eps
+                    * intensity
+                    * conc_PI[node]
+                    * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  )
+                    + eps_nacl
+                    * intensity
+                    * exp(  -eps_nacl*(len_block-current_coords[2]*coord_map_const)  )
+                    ) / 2;
+    }
+    else{
+        // material is particle
+        heat_uv = eps_nacl
+                * intensity
+                * exp(  -eps_nacl*(len_block-current_coords[2]*coord_map_const)  );
+    }
+    // heat_uv = eps
+    //             * intensity
+    //             * conc_PI[node]
+    //             * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  );
 
     diff_theta[node] = heat_diffuse;
-    return (heat_diffuse + heat_rxn + heat_uv) / density[node] / heat_capacity[node];
+    return heat_diffuse + (heat_rxn + heat_uv) / density[node] / heat_capacity[node];
 };
 
 
