@@ -424,26 +424,27 @@ double Voxel::PIdotRate(std::vector<double> &conc_PIdot,
     if (material_type[node] == 1){
         // material is ugap
         double diffuse, Dm_avg;
+        double diffusivity[6]; 
 
-        // average diffusion coefficient
-        Dm_avg = Dm0 * (  exp(-Am / f_free_volume[node - N_PLANE_NODES])
-                        + exp(-Am / f_free_volume[node - nodes])
-                        + exp(-Am / f_free_volume[node - 1])
-                        + 6 * exp(-Am / f_free_volume[node])
-                        + exp(-Am / f_free_volume[node + N_PLANE_NODES])
-                        + exp(-Am / f_free_volume[node + nodes])
-                        + exp(-Am / f_free_volume[node + 1])
-                        ) / 12.;
-                        
-        diffuse = Dm_avg
-                        * (       conc_PIdot[node - 1]
-                            +     conc_PIdot[node - nodes]
-                            +     conc_PIdot[node - N_PLANE_NODES]
-                            - 6 * conc_PIdot[node]
-                            +     conc_PIdot[node + 1]
-                            +     conc_PIdot[node + nodes]
-                            +     conc_PIdot[node + N_PLANE_NODES]
-                        ) / h / h;
+        // compute average diffusivity values for each first order derivative
+        diffusivity[0] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + 1])             + exp(-Am / f_free_volume[node]));
+        diffusivity[1] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - 1])             + exp(-Am / f_free_volume[node]));
+        diffusivity[2] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + nodes])         + exp(-Am / f_free_volume[node]));
+        diffusivity[3] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - nodes])         + exp(-Am / f_free_volume[node]));
+        diffusivity[4] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + N_PLANE_NODES]) + exp(-Am / f_free_volume[node]));
+        diffusivity[5] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - N_PLANE_NODES]) + exp(-Am / f_free_volume[node]));
+
+       // compute chemical diffusion as a function of variable diffusivity
+        double denom = 1 / h / h; 
+
+        diffuse = (  diffusivity[0] * (conc_PI[node+1]               - conc_PI[node])
+                   - diffusivity[1] * (conc_PI[node]                 - conc_PI[node - 1])
+                   + diffusivity[2] * (conc_PI[node + nodes]         - conc_PI[node])
+                   - diffusivity[3] * (conc_PI[node]                 - conc_PI[node - nodes])
+                   + diffusivity[4] * (conc_PI[node + N_PLANE_NODES] - conc_PI[node])
+                   - diffusivity[5] * (conc_PI[node]                 - conc_PI[node - N_PLANE_NODES])
+                   ) * denom;
+
 
         diff_pdot[node] = diffuse; 
 
@@ -478,28 +479,27 @@ double Voxel::MdotRate(std::vector<double> &conc_Mdot,
     if (material_type[node] == 1){
         // material is resin
         double term1, term2, term3, Dm_avg;
+        double diffusivity[6]; 
         term1 = k_i*c_PIdot[node]*c_M[node];
         term2 = k_t[node]*conc_Mdot[node]*conc_Mdot[node];
 
-        // average diffusion coefficient
-        Dm_avg = Dm0 * (  exp(-Am / f_free_volume[node - N_PLANE_NODES])
-                        + exp(-Am / f_free_volume[node - nodes])
-                        + exp(-Am / f_free_volume[node - 1])
-                        + 6 * exp(-Am / f_free_volume[node])
-                        + exp(-Am / f_free_volume[node + N_PLANE_NODES])
-                        + exp(-Am / f_free_volume[node + nodes])
-                        + exp(-Am / f_free_volume[node + 1])
-                        ) / 12.;
+        // compute average diffusivity values for each first order derivative
+        diffusivity[0] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + 1])             + exp(-Am / f_free_volume[node]));
+        diffusivity[1] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - 1])             + exp(-Am / f_free_volume[node]));
+        diffusivity[2] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + nodes])         + exp(-Am / f_free_volume[node]));
+        diffusivity[3] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - nodes])         + exp(-Am / f_free_volume[node]));
+        diffusivity[4] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + N_PLANE_NODES]) + exp(-Am / f_free_volume[node]));
+        diffusivity[5] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - N_PLANE_NODES]) + exp(-Am / f_free_volume[node]));
 
-        term3 = Dm_avg
-                  * (            conc_Mdot[node - N_PLANE_NODES]
-                           +     conc_Mdot[node - nodes]
-                           +     conc_Mdot[node - 1]
-                           - 6 * conc_Mdot[node]
-                           +     conc_Mdot[node + N_PLANE_NODES]
-                           +     conc_Mdot[node + nodes]
-                           +     conc_Mdot[node + 1]
-                  ) / h / h;
+        // compute chemical diffusion as a function of variable diffusivity
+        double denom = 1 / h / h; 
+        term3 = (   diffusivity[0] * (conc_Mdot[node+1]       - conc_Mdot[node])
+                  - diffusivity[1] * (conc_Mdot[node]         - conc_Mdot[node - 1])
+                  + diffusivity[2] * (conc_Mdot[node + nodes] - conc_Mdot[node])
+                  - diffusivity[3] * (conc_Mdot[node] - conc_Mdot[node - nodes])
+                  + diffusivity[4] * (conc_Mdot[node + N_PLANE_NODES] - conc_Mdot[node])
+                  - diffusivity[5] * (conc_Mdot[node] - conc_Mdot[node - N_PLANE_NODES])
+                  ) * denom; 
 
         diff_mdot[node] = term3;
         return (term1 - term2 + term3);
@@ -534,11 +534,28 @@ double Voxel::MRate(std::vector<double> &conc_M,
     if (material_type[node] == 1){
         // material is resin
         double diffuse, consume, Dm_avg;
+        double diffusivity[6]; 
 
         consume =   (k_p[node]*conc_Mdot[node]*conc_M[node])
                   + (k_i*conc_PIdot[node]*conc_M[node]);
 
-        // Dm_avg = Dm0 * (exp(-Am / f_free_volume[node - N_PLane]) )
+        // compute average diffusivity values for each first order derivative
+        diffusivity[0] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + 1])             + exp(-Am / f_free_volume[node]));
+        diffusivity[1] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - 1])             + exp(-Am / f_free_volume[node]));
+        diffusivity[2] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + nodes])         + exp(-Am / f_free_volume[node]));
+        diffusivity[3] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - nodes])         + exp(-Am / f_free_volume[node]));
+        diffusivity[4] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + N_PLANE_NODES]) + exp(-Am / f_free_volume[node]));
+        diffusivity[5] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node - N_PLANE_NODES]) + exp(-Am / f_free_volume[node]));
+
+        // compute chemical diffusion taking into account the average diffusivity values
+        double denom = 1 / h / h; 
+        diffuse = (  diffusivity[0]*(conc_M[node+1]-conc_M[node]) 
+                   - diffusivity[1]*(conc_M[node]-conc_M[node-1])
+                   + diffusivity[2]*(conc_M[node+nodes]-conc_M[node])
+                   - diffusivity[3]*(conc_M[node]-conc_M[node-nodes])
+                   + diffusivity[4]*(conc_M[node+N_PLANE_NODES]-conc_M[node])
+                   - diffusivity[5]*(conc_M[node]-conc_M[node-N_PLANE_NODES])
+                   ) * denom;
         
         // average diffusion coefficient
         Dm_avg = Dm0 * (  exp(-Am / f_free_volume[node - N_PLANE_NODES])
