@@ -37,9 +37,9 @@ Voxel::Voxel(int nodes_){
     coord_map_const = len_block / nodes; 
 
     // formulation - wt. percent
-    percent_PI = 0.0333;                                        // |   wt.%  | weight percent of photo initiator
-    percent_PEA = 0.15;                                         // |   wt.%  | weight percent of PEA
-    percent_HDDA = 0.0168;                                      // |   wt.%  | weight percent of HDDA
+    percent_PI    = 0.0333;                                     // |   wt.%  | weight percent of photo initiator
+    percent_PEA   = 0.15;                                       // |   wt.%  | weight percent of PEA
+    percent_HDDA  = 0.0168;                                     // |   wt.%  | weight percent of HDDA
     percent_8025D = 0.4084;                                     // |   wt.%  | weight percent of 8025D
     percent_8025E = 0.0408;                                     // |   wt.%  | weight percent of 8025E
     percent_E4396 = 0.3507;                                     // |   wt.%  | weight percent of HDDA
@@ -76,22 +76,27 @@ Voxel::Voxel(int nodes_){
     Am = 0.66;                                                  // | unitless| diffusion constant parameter, monomer (shanna lit.)
 
     // bowman reaction parameters
-    Rg = 8.3145;                                                // | J/mol K | universal gas constant
-    alpha_P = 0.000075;                                         // |   1/K   | coefficent of thermal expansion, polymerization (taki + bowman lit.)
-    alpha_M = 0.0005;                                           // |   1/K   | coefficent of thermal expansion, monomer (taki + bowman lit.)
+    Rg       = 8.3145;                                          // | J/mol K | universal gas constant
+    alpha_P  = 0.000075;                                        // |   1/K   | coefficent of thermal expansion, polymerization (taki + bowman lit.)
+    alpha_M  = 0.0005;                                          // |   1/K   | coefficent of thermal expansion, monomer (taki + bowman lit.)
     theta_gP = 236.75;                                          // |    K    | glass transition temperature, polymer UGAP (measured TgA)
     theta_gM = 313.6;                                           // |    K    | glass transition temperature, monomer (Taki lit.)
+
     k_P0 = 1.145e2;                                             // |m^3/mol s| true kinetic constant, polymerization (taki lit.)
-    E_P = 10.23e3;                                              // |  J/mol  | activation energy, polymerization (lit.)
-    A_Dp = 0.05;                                                // | unitless| diffusion parameter, polymerization (lit.)
-    f_cp = 5.17e-2;                                             // | unitless| critical free volume, polymerization (lit.)
+    // E_P  = 18.23e3;                                             // |  J/mol  | activation energy, polymerization (bowman lit. 1)
+    E_P = 10.23e3;                                              // |  J/mol  | activation energy, polymerization (bowman lit. MODIFIED)
+    A_Dp = 0.05;                                                // | unitless| diffusion parameter, polymerization (bowman lit. 1)
+    // A_Dp = 1.26;                                                // | unitless| diffusion parameter, polymerization (taki lit.)
+    f_cp = 5.17e-2;                                             // | unitless| critical free volume, polymerization (taki lit.)
+
     k_T0 = 1.337e3;                                             // |m^3/mol s| true kinetic constant, termination (taki lit.)
-    E_T = 2.94e3;                                               // |  J/mol  | activation energy, termination (bowman lit.)
-    A_Dt = 1.2;                                                 // | unitless| activation energy, termination (taki lit.)
+    E_T  = 2.94e3;                                              // |  J/mol  | activation energy, termination (bowman lit.)
+    A_Dt = 1.2;                                                 // | unitless| activation energy, termination (bowman lit. MODIFIED?)
+    // A_Dt = 22.8;                                               // | unitless| activation energy, termination (taki lit.) 
     f_ct = 5.81e-2;                                             // | unitless| critical free volume, termination (taki lit.)
     R_rd = 11;                                                  // |  1/mol  | reaction diffusion parameter (taki lit.)
 
-    k_i = 4.8e-5;                                               // |m^3/mol s| primary radical rate constant (taki lit.)
+    k_I0 = 4.8e-4;                                              // |m^3/mol s| primary radical rate constant (taki lit.)
 
     // thermal properties
     theta0         = 303.15;                                    // |    K    | initial and ambient temperature
@@ -106,10 +111,6 @@ Voxel::Voxel(int nodes_){
 //    // SHANNA PARAMS
     Cp_shanna        = 1700;                                    // | J/kg/K  | shanna's heat capacity
     K_thermal_shanna = 0.2;                                     // | W/m/K   | shanna's thermal conductivity
-//    shanna_c_PI0 = 150;                                         // | mol/m^3 | initial PI concentration
-//    shanna_c_M0 = 8250;                                         // | mol/m^3 | initial monomer concentration
-//    shanna_mw_M = 130.14e-3;                                    // | mol/kg  | mw of monomer
-//    shanna_mw_PI = 256.301e-3;                                  // | mol/kg  | mw of PI
 
     // photo initiator properties
     eps      = 9.66e-1;                                         // |m^3/mol m| initiator absorbtivity
@@ -159,6 +160,7 @@ Voxel::Voxel(int nodes_){
     // rate constants
     std::fill_n(std::back_inserter(k_t),           N_VOL_NODES, k_T0);
     std::fill_n(std::back_inserter(k_p),           N_VOL_NODES, k_P0);
+    std::fill_n(std::back_inserter(k_i),           N_VOL_NODES, k_I0);
 
     std::cout << "==================================" << std::endl;
 
@@ -376,17 +378,25 @@ void Voxel::ComputeRxnRateConstants() {
             // compute temperature dependent rate constants
             // bowman (1) equation 17
             k_p[i] = k_P0*exp(-E_P / Rg / theta[i]) / (1 + exp(A_Dp * (1/f_free_volume[i] - 1/f_cp)));
+            // k_p[i] = k_P0 / (1 + exp(A_Dp * (1/f_free_volume[i] - 1/f_cp)));
+            // k_i[i] = k_P0*exp(-E_I / Rg / theta[i]) / (1 + exp(A_I  * (1/f_free_volume[i] - 1/f_ci)));
+            k_i[i] = k_I0; 
+            // k_i[i] = k_I0; // / (1 + exp(A_I  * (1/f_free_volume[i] - 1/f_ci))); // taki method 
 
             // bowman (1) equation 18
+
             k_tr   = R_rd * k_p[i] * c_M[i];
             denom  = (k_tr / (k_T0*exp(-E_T/Rg/theta[i])) + exp(-A_Dt*(1/f_free_volume[i] - 1/f_ct)));
             k_t[i] = k_T0*exp(-E_T/Rg/theta[i]) / (1+1/denom);
+            // k_t[i] = k_T0 / (1 + 1 / (R_rd * k_p[i] * c_M[i] / (k_T0) + exp(-A_Dt*(1/f_free_volume[i] - 1/f_ct))));
+            
 
         }else{
             // compute reaction rate constants for particles
             f_free_volume[i] = 0.;
             k_t[i]           = 0.;
             k_p[i]           = 0.;
+            k_i[i]           = 0.;
         };
     }
 }
@@ -448,12 +458,12 @@ double Voxel::PIdotRate(std::vector<double> &conc_PIdot,
 
         diff_pdot[node] = diffuse; 
 
-        return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i*conc_PIdot[node]*conc_M[node] + diffuse);
+        return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i[node]*conc_PIdot[node]*conc_M[node] + diffuse);
     }
     
     else if (material_type[node] == 2){
         // material is interface
-        return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i*conc_PIdot[node]*conc_M[node]);
+        return (phi*eps*I0*conc_PI[node]*exp(-eps*conc_PI[node]*z) - k_i[node]*conc_PIdot[node]*conc_M[node]);
     }
 
     else{
@@ -480,7 +490,7 @@ double Voxel::MdotRate(std::vector<double> &conc_Mdot,
         // material is resin
         double term1, term2, term3, Dm_avg;
         double diffusivity[6]; 
-        term1 = k_i*c_PIdot[node]*c_M[node];
+        term1 = k_i[node]*c_PIdot[node]*c_M[node];
         term2 = k_t[node]*conc_Mdot[node]*conc_Mdot[node];
 
         // compute average diffusivity values for each first order derivative
@@ -508,7 +518,7 @@ double Voxel::MdotRate(std::vector<double> &conc_Mdot,
     
     else if (material_type[node] == 2){
         // material is interface 
-        return k_i*c_PIdot[node]*c_M[node] - k_t[node]*conc_Mdot[node]*conc_Mdot[node]; 
+        return k_i[node]*c_PIdot[node]*c_M[node] - k_t[node]*conc_Mdot[node]*conc_Mdot[node]; 
     }
     
     else{
@@ -537,7 +547,7 @@ double Voxel::MRate(std::vector<double> &conc_M,
         double diffusivity[6]; 
 
         consume =   (k_p[node]*conc_Mdot[node]*conc_M[node])
-                  + (k_i*conc_PIdot[node]*conc_M[node]);
+                  + (k_i[node]*conc_PIdot[node]*conc_M[node]);
 
         // compute average diffusivity values for each first order derivative
         diffusivity[0] = 0.5 * Dm0 * (exp(-Am / f_free_volume[node + 1])             + exp(-Am / f_free_volume[node]));
@@ -581,7 +591,7 @@ double Voxel::MRate(std::vector<double> &conc_M,
 
     else if (material_type[node] == 2){
         // material is interface - no diffusion, return only consumptions
-        return -(k_p[node]*conc_Mdot[node]*conc_M[node]) - (k_i*conc_PIdot[node]*conc_M[node]);
+        return -(k_p[node]*conc_Mdot[node]*conc_M[node]) - (k_i[node]*conc_PIdot[node]*conc_M[node]);
     }
 
     else{
@@ -624,7 +634,7 @@ double Voxel::TempRate(std::vector<double> &temperature,
 
     // compute the heat release by all exothermic (bond formation) reactions
     // heat_rxn = (k_p[node] * conc_M[node] * conc_Mdot[node] ) * dHp;
-    heat_rxn = (  k_i       * conc_PIdot[node] * conc_M[node]
+    heat_rxn = (  k_i[node] * conc_PIdot[node] * conc_M[node]
                 + k_p[node] * conc_Mdot[node]  * conc_M[node]
                 + k_t[node] * conc_Mdot[node]  * conc_Mdot[node]
                 ) * dHp;
@@ -690,11 +700,11 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                 // std::cout << "\nINTERNAL NODE: " << std::endl; 
 
                 // solve equations 1-5
-                c_PI_next[node] = c_PI[node] + dt*IRate(c_PI, I0, depth, node); 
+                c_PI_next[node]    = c_PI[node] + dt*IRate(c_PI, I0, depth, node); 
                 c_PIdot_next[node] = c_PIdot[node] + dt*PIdotRate(c_PIdot, c_PI, c_M, I0, depth, node); 
-                c_Mdot_next[node] = c_Mdot[node] + dt*MdotRate(c_Mdot, c_PIdot, c_M, node); 
-                c_M_next[node] = c_Mdot[node] + dt*MRate(c_M, c_Mdot, c_PIdot, node); 
-                theta_next[node] = theta[node] + dt*TempRate(theta, c_M, c_Mdot, c_PI, c_PIdot, I0, node);
+                c_Mdot_next[node]  = c_Mdot[node] + dt*MdotRate(c_Mdot, c_PIdot, c_M, node); 
+                c_M_next[node]     = c_Mdot[node] + dt*MRate(c_M, c_Mdot, c_PIdot, node); 
+                theta_next[node]   = theta[node] + dt*TempRate(theta, c_M, c_Mdot, c_PI, c_PIdot, I0, node);
                     }
             // BOUNDARY NODES
             else if (   current_coords[0] == 0 or current_coords[0] == (nodes-1)

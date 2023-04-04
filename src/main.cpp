@@ -25,9 +25,9 @@ int main() {
     */
 
     const int NODE = 21;
-    const double DT = 1 * pow(10, -3);
-    // const int NODE = 21;
-    // const double DT = 1 * pow(10, -3);
+    const double DT = 1e-3;
+    // const int NODE = 51;
+    // const double DT = 5e-5;
     double TFINAL = 30.;
     
 
@@ -36,7 +36,7 @@ int main() {
     VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
     VoxelSystem1.Density2File();
 
-    VoxelSystem1.Simulate(10.0, TFINAL, DT, 1);
+    VoxelSystem1.Simulate(10.0, TFINAL, DT, 2);
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = (std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count() / 1e6;

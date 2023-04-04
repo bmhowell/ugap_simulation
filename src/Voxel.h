@@ -88,8 +88,11 @@ private:
     float f_ct;                                               // | unitless| critical free volume, termination (taki lit.)
     int R_rd;                                                 // |  1/mol  | reaction diffusion parameter (taki lit.)
 
-    float k_i;                                                // |  s^-1   | primary radical rate constant
-
+    float k_I0;                                               // |  s^-1   | primary radical rate constant
+    float A_I;                                                // | unitless| activation energy, initiation (bowman lit. 1)
+    float f_ci;                                               // | unitless| critical free volume, initiation (bowman lit. 1)
+    float E_I;                                                // |  J/mol  | activation energy, initiation (bowman lit. 1)
+    
     // thermal properties
     float dHp;                                                // |  W/mol  | heat of polymerization of acrylate monomers
     int Cp_nacl;                                              // | J/kg/K  | heat capacity of NaCl
@@ -124,7 +127,7 @@ private:
     // initialize spatial concentrations, temperature, and rate constants
     std::vector<double> c_PI, c_PIdot, c_Mdot, c_M;
     std::vector<double> theta;
-    std::vector<double> k_t, k_p, diff_pdot, diff_mdot, diff_m, diff_theta;
+    std::vector<double> k_t, k_p, k_i, diff_pdot, diff_mdot, diff_m, diff_theta;
 
     // vectors and arrays for particle generation
     std::vector<int> material_type;                             // 0-resin, 1-particle
