@@ -80,23 +80,23 @@ Voxel::Voxel(int nodes_){
     alpha_P  = 0.000075;                                        // |   1/K   | coefficent of thermal expansion, polymerization (taki + bowman lit.)
     alpha_M  = 0.0005;                                          // |   1/K   | coefficent of thermal expansion, monomer (taki + bowman lit.)
     theta_gP = 236.75;                                          // |    K    | glass transition temperature, polymer UGAP (measured TgA)
-    theta_gM = 313.6;                                           // |    K    | glass transition temperature, monomer (Taki lit.)
+    theta_gM = 213.;                                           // |    K    | glass transition temperature, monomer (bowman lit.)
 
-    k_P0 = 1.145e2;                                             // |m^3/mol s| true kinetic constant, polymerization (taki lit.)
-    // E_P  = 18.23e3;                                             // |  J/mol  | activation energy, polymerization (bowman lit. 1)
-    E_P = 10.23e3;                                              // |  J/mol  | activation energy, polymerization (bowman lit. MODIFIED)
-    A_Dp = 0.05;                                                // | unitless| diffusion parameter, polymerization (bowman lit. 1)
-    // A_Dp = 1.26;                                                // | unitless| diffusion parameter, polymerization (taki lit.)
-    f_cp = 5.17e-2;                                             // | unitless| critical free volume, polymerization (taki lit.)
+    k_P0 = 1.6e3;                                             // |m^3/mol s| true kinetic constant, polymerization (bowman lit. 1)
+    E_P  = 18.23e3;                                             // |  J/mol  | activation energy, polymerization (bowman lit. 1)
+    A_Dp = 0.66;                                                // | unitless| diffusion parameter, polymerization (bowman lit.)
+    f_cp = 0.042;                                               // | unitless| critical free volume, polymerization (bowman lit.)
 
-    k_T0 = 1.337e3;                                             // |m^3/mol s| true kinetic constant, termination (taki lit.)
+    k_T0 = 3.6e3;                                               // |m^3/mol s| true kinetic constant, termination (bowman lit.)
     E_T  = 2.94e3;                                              // |  J/mol  | activation energy, termination (bowman lit.)
     A_Dt = 1.2;                                                 // | unitless| activation energy, termination (bowman lit. MODIFIED?)
-    // A_Dt = 22.8;                                               // | unitless| activation energy, termination (taki lit.) 
-    f_ct = 5.81e-2;                                             // | unitless| critical free volume, termination (taki lit.)
-    R_rd = 11;                                                  // |  1/mol  | reaction diffusion parameter (taki lit.)
+    f_ct = 0.06;                                                // | unitless| critical free volume, termination (bowman lit.)
+    R_rd = 4.;                                               // |m^3/mol  | reaction diffusion parameter (bowman lit.)
 
-    k_I0 = 4.8e-4;                                              // |m^3/mol s| primary radical rate constant (taki lit.)
+    k_I0 = 1.6e3;                                               // |m^3/mol s| primary radical rate constant (bowman lit.)
+    E_I  = 18.23e3;                                             // |  J/mol  | activation energy, initiation (bowman lit.)
+    A_I = 0.66;                                                 // | unitless| diffusion parameter, initiation (bowman lit.)
+    f_ci = 0.042;                                               // | unitless| critical free volume, initiation (bowman lit.)
 
     // thermal properties
     theta0         = 303.15;                                    // |    K    | initial and ambient temperature
@@ -379,8 +379,8 @@ void Voxel::ComputeRxnRateConstants() {
             // bowman (1) equation 17
             k_p[i] = k_P0*exp(-E_P / Rg / theta[i]) / (1 + exp(A_Dp * (1/f_free_volume[i] - 1/f_cp)));
             // k_p[i] = k_P0 / (1 + exp(A_Dp * (1/f_free_volume[i] - 1/f_cp)));
-            // k_i[i] = k_P0*exp(-E_I / Rg / theta[i]) / (1 + exp(A_I  * (1/f_free_volume[i] - 1/f_ci)));
-            k_i[i] = k_I0; 
+            k_i[i] = k_I0*exp(-E_I / Rg / theta[i]) / (1 + exp(A_I  * (1/f_free_volume[i] - 1/f_ci)));
+            // k_i[i] = k_I0; 
             // k_i[i] = k_I0; // / (1 + exp(A_I  * (1/f_free_volume[i] - 1/f_ci))); // taki method 
 
             // bowman (1) equation 18

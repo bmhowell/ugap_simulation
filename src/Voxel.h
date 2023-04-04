@@ -86,13 +86,13 @@ private:
     float E_T;                                                // |  J/mol  | activation energy, termination (bowman lit.)
     float A_Dt;                                               // | unitless| activation energy, termination (taki lit.)
     float f_ct;                                               // | unitless| critical free volume, termination (taki lit.)
-    int R_rd;                                                 // |  1/mol  | reaction diffusion parameter (taki lit.)
+    float R_rd;                                               // |  1/mol  | reaction diffusion parameter (taki lit.)
 
     float k_I0;                                               // |  s^-1   | primary radical rate constant
     float A_I;                                                // | unitless| activation energy, initiation (bowman lit. 1)
     float f_ci;                                               // | unitless| critical free volume, initiation (bowman lit. 1)
     float E_I;                                                // |  J/mol  | activation energy, initiation (bowman lit. 1)
-    
+
     // thermal properties
     float dHp;                                                // |  W/mol  | heat of polymerization of acrylate monomers
     int Cp_nacl;                                              // | J/kg/K  | heat capacity of NaCl
@@ -101,10 +101,6 @@ private:
     float K_thermal_nacl;
 
 //    // SHANNA PARAMETERS
-//    int shanna_c_PI0;                                         // | mol/m^3 | initial PI concentration
-//    int shanna_c_M0;                                          // | mol/m^3 | initial monomer concentration
-//    float shanna_mw_M;                                        // | mol/kg  | mw of monomer
-//    float shanna_mw_PI;                                       // | mol/kg  | mw of PI
     int Cp_shanna;                                            // | J/kg/K  | shanna's heat capacity
     float K_thermal_shanna;                                   // | W/m/K   | shanna's thermal conductivity
 

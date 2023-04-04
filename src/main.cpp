@@ -25,7 +25,7 @@ int main() {
     */
 
     const int NODE = 21;
-    const double DT = 1e-3;
+    const double DT = 5e-4;
     // const int NODE = 51;
     // const double DT = 5e-5;
     double TFINAL = 30.;
@@ -33,7 +33,7 @@ int main() {
 
     auto start = std::chrono::high_resolution_clock::now();
     Voxel VoxelSystem1(NODE);
-    VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
+    // VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
     VoxelSystem1.Density2File();
 
     VoxelSystem1.Simulate(10.0, TFINAL, DT, 2);
