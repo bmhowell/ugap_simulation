@@ -8,12 +8,12 @@ theta0 303.15
 ==================================
 
 Numerical parameters
-h: 4.2e-05
-dt: 0.001
-CFL: 23.8095
+h: 1.68e-05
+dt: 5e-05
+CFL: 2.97619
 
 ==================================
-solids loading: 0
-particles_ind.size(): 0
+solids loading: 0.523087
+particles_ind.size(): 69388
 
 ==================================

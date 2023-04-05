@@ -26,8 +26,8 @@ Voxel::Voxel(int nodes_){
     nodes = nodes_;                                             // | unitless|  total number of nodes
 
     // set file path
-    file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
-    // file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
+    // file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
+    file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
 
     interfacial_nodes = 1;                                      // |   ---   |  interfacial thickness parameter
     len_block = 0.00084;                                        // |    m    |  sample length

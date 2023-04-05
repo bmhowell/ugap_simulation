@@ -52,8 +52,24 @@ avg_diff_theta     = df[' avg_diff_theta'].tolist()[::skip]
 avg_diff_theta_top = df[' avg_diff_theta_top'].tolist()[::skip]
 avg_diff_theta_bot = df[' avg_diff_theta_bot'].tolist()[::skip]
 
-# plot avg theta with time
+
+# plot conversion 
 fs_ = 25
+plt.figure(figsize=(10, 7.5))
+plt.scatter(time, (1 - np.array(avg_top_cM) / avg_top_cM[0]), color='b', marker='+', s=150, label='average top layer')
+plt.scatter(time, (1 - np.array(avg_bot_cM) / avg_bot_cM[0]), color='g', marker='x', s=300, label='average bottom layer')
+plt.scatter(time, (1 - np.array(avg_tot_cM) / avg_tot_cM[0]), color='k', s=150, label='average total')
+plt.legend(fontsize=fs_-5)
+plt.title(r'conversion of cM', fontsize=fs_)
+plt.ylabel(r'conversion (%)', fontsize=fs_-5)
+plt.xlabel('time ($s$)', fontsize=fs_-5)
+plt.xticks(fontsize=fs_-5)
+plt.yticks(fontsize=fs_-5)
+plt.ylim(0, 1)
+plt.savefig("figs/conversion.png")
+plt.show()
+
+# plot avg theta with time
 plt.figure(figsize=(10, 7.5))
 # plt.scatter(time, avg_top_theta, color='b', s=150, label='average top layer')
 # plt.scatter(time, avg_bot_theta, color='g', s=150, label='average bottom layer')
@@ -68,7 +84,7 @@ plt.yticks(fontsize=fs_-5)
 # plt.gca().yaxis.set_major_formatter(formatter)
 # plt.ylim(min(avg_tot_theta)-0.1, max(avg_tot_theta)+0.1)
 # plt.ylim(303.15, 303.2)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/theta.png")
 plt.show()
 
 # plot avg cPI with time
@@ -83,7 +99,7 @@ plt.ylabel(r'concentration ($mol/m^3$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")  
+plt.savefig("figs/c_PI.png")  
 plt.show()
 
 # plot avg cPIdot with time
@@ -97,21 +113,7 @@ plt.ylabel(r'concentration ($mol/m^3$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
-plt.show()
-
-# plot avg cMdot with time
-plt.figure(figsize=(10, 7.5))
-plt.scatter(time, avg_top_cMdot, color='b', marker='+', s=150, label='average top layer')
-plt.scatter(time, avg_bot_cMdot, color='g', marker='x', s=150, label='average bottom layer')
-plt.scatter(time, avg_tot_cMdot, color='k', s=150, label='average total')
-plt.legend(fontsize=fs_-5)
-plt.title(r'concentration of cMdot ($mol/m^3$)', fontsize=fs_)
-plt.ylabel(r'concentration ($mol/m^3$)', fontsize=fs_-5)
-plt.xlabel('time ($s$)', fontsize=fs_-5)
-plt.xticks(fontsize=fs_-5)
-plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/c_PIdot.png")
 plt.show()
 
 # plot avg cM with time
@@ -126,7 +128,7 @@ plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 plt.ylim(0, 1650)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/c_M.png")
 plt.show()
 
 # plot avg free volume with time
@@ -138,7 +140,7 @@ plt.ylabel(r'free volume', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/avg_free_volume.png")
 plt.show()
 
 # plot avg k_t with time
@@ -150,7 +152,7 @@ plt.ylabel(r'$k_t$ ($m^3/mol/s$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/k_t.png")
 plt.show()
 
 # plot avg k_p with time
@@ -162,7 +164,7 @@ plt.ylabel(r'$k_p$ ($m^3/mol/s$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/k_p.png")
 plt.show()
 
 # plot avg diff_pdot with time
@@ -176,7 +178,7 @@ plt.ylabel(r'diff_pdot', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/diff_pdot.png")
 plt.show()
 
 # plot avg diff_mdot with time
@@ -190,7 +192,7 @@ plt.ylabel(r'diff_mdot', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/diff_mdot.png")
 plt.show()
 
 # plot avg diff_M with time
@@ -204,7 +206,7 @@ plt.ylabel(r'diff_M', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/diff_M.png")
 plt.show()
 
 # plot avg diff_theta with time
@@ -218,7 +220,7 @@ plt.ylabel(r'diff_theta ', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("figs/c_PI.png")
+plt.savefig("figs/diff_theta.png")
 plt.show()
 
 
