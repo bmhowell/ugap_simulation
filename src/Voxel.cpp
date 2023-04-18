@@ -26,8 +26,8 @@ Voxel::Voxel(int nodes_){
     nodes = nodes_;                                             // | unitless|  total number of nodes
 
     // set file path
-    // file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
-    file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
+    file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
+    // file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
 
     interfacial_nodes = 1;                                      // |   ---   |  interfacial thickness parameter
     len_block = 0.00084;                                        // |    m    |  sample length
@@ -52,7 +52,6 @@ Voxel::Voxel(int nodes_){
     rho_E4396 = 1100;                                           // | kg/m^3  | density of EBECRYL 4396
     rho_M = 0.899 * rho_PEA + 0.101 * rho_HDDA;                 // | kg/m^3  | weighted average density of monomer
     rho_P = 0.03 * rho_HDDA + 0.29 * rho_PEA + 0.68 * rho_E4396;// | kg/m^3  | weighted average density of polymer
-    // rho_P = rho_E4396                                        // | kg/m^3  | weighted average density of polymer
     rho_UGAP = 1840;                                            // | kg/m^3  | estimated density of UGAP
     rho_nacl = 2170;                                            // | kg/m^3  | estimated density of NaCl
 
@@ -60,7 +59,6 @@ Voxel::Voxel(int nodes_){
     mw_HDDA = 0.226;                                            // |  kg/mol | molecular weight of HDDA
     mw_M = 0.899 * mw_PEA + 0.101 * mw_HDDA;                    // |  kg/mol | weighted average molecular weight of monomer
     mw_PI = 0.4185;                                             // |  kg/mol | molecular weight of photo initiator
-//    mw_M = mw_PEA;
 
     basis_wt = 0.5;                                             // |   kg    | arbitrary starting ink weight
     basis_vol = basis_wt / rho_UGAP;                            // |   m^3   | arbitrary starting ink volume
@@ -72,7 +70,6 @@ Voxel::Voxel(int nodes_){
 
     // diffusion properties
     Dm0 = 1.08e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (taki lit.)
-    // Dm0 = 2.36e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (shanna lit.)
     Am = 0.66;                                                  // | unitless| diffusion constant parameter, monomer (shanna lit.)
 
     // bowman reaction parameters
@@ -80,29 +77,20 @@ Voxel::Voxel(int nodes_){
     alpha_P  = 0.000075;                                        // |   1/K   | coefficent of thermal expansion, polymerization (taki + bowman lit.)
     alpha_M  = 0.0005;                                          // |   1/K   | coefficent of thermal expansion, monomer (taki + bowman lit.)
     theta_gP = 236.75;                                          // |    K    | glass transition temperature, polymer UGAP (measured TgA)
-    // theta_gP = 313.6; 
     theta_gM = 313.6;                                           // |    K    | glass transition temperature, monomer (bowman lit.)
-    // theta_gM = 236.51; 
 
     k_P0 = 1.145e2;                                             // |m^3/mol s| true kinetic constant, polymerization (bowman lit. 1)
     E_P  = 10.23e3;                                             // |  J/mol  | activation energy, polymerization (bowman lit. 1)
-    // A_Dp = 0.66;                                                // | unitless| diffusion parameter, polymerization (bowman lit.)
-    A_Dp = 0.05; 
-    // f_cp = 0.042;                                               // | unitless| critical free volume, polymerization (bowman lit.)
-    f_cp = 5.17e-2;
+    A_Dp = 0.05;                                                // | unitless| diffusion parameter, polymerization (bowman lit.)
+    f_cp = 5.17e-2;                                             // | unitless| critical free volume, polymerization (bowman lit.)
 
-    // k_T0 = 3.6e3;                                               // |m^3/mol s| true kinetic constant, termination (bowman lit.)
-    k_T0 = 1.336e3; 
+    k_T0 = 1.336e3;                                             // |m^3/mol s| true kinetic constant, termination (bowman lit.)
     E_T  = 2.94e3;                                              // |  J/mol  | activation energy, termination (bowman lit.)
-    // A_Dt = 1.2;                                                 // | unitless| activation energy, termination (bowman lit. MODIFIED?)
-    A_Dt = 1.2; 
-    // f_ct = 0.06;                                                // | unitless| critical free volume, termination (bowman lit.)
-    f_ct = 5.81e-2; 
-    // R_rd = 4.;                                               // |m^3/mol  | reaction diffusion parameter (bowman lit.)
-    R_rd = 11.; 
+    A_Dt = 1.2;                                                 // | unitless| activation energy, termination (bowman lit. MODIFIED?)
+    f_ct = 5.81e-2;                                             // | unitless| critical free volume, termination (bowman lit.)
+    R_rd = 11.;                                                 // |m^3/mol  | reaction diffusion parameter (bowman lit.)
 
-    // k_I0 = 1.6e3;                                               // |m^3/mol s| primary radical rate constant (bowman lit.)
-    k_I0 = 4.8e-4; 
+    k_I0 = 4.8e-4;                                              // |m^3/mol s| primary radical rate constant (bowman lit.)
     E_I  = 18.23e3;                                             // |  J/mol  | activation energy, initiation (bowman lit.)
     A_I = 0.66;                                                 // | unitless| diffusion parameter, initiation (bowman lit.)
     f_ci = 0.042;                                               // | unitless| critical free volume, initiation (bowman lit.)
@@ -117,7 +105,6 @@ Voxel::Voxel(int nodes_){
     Cp_hdda       /= mw_HDDA;                                   // | J/kg/K  | convert units
     K_thermal_nacl = 0.069;                                     // | W/m/K   | thermal conductivity
 
-//    // SHANNA PARAMS
     Cp_shanna        = 1700;                                    // | J/kg/K  | shanna's heat capacity
     K_thermal_shanna = 0.2;                                     // | W/m/K   | shanna's thermal conductivity
 
@@ -1235,131 +1222,89 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                     if (i == 0){
                         if (material_type[node] == 1){
                             // ugap resin
-                            // c_PIdot_1[node] =  c_PIdot_0[node+N_PLANE_NODES]; 
                             c_PIdot_1[node] = pre_1 * c_PIdot_1[node+N_PLANE_NODES] - pre_2 * c_PIdot_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
                             err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
 
-                            // c_Mdot_1[node] = c_Mdot_0[node+N_PLANE_NODES]; 
                             c_Mdot_1[node] = pre_1 * c_Mdot_1[node+N_PLANE_NODES] - pre_2 * c_Mdot_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
                             err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
                             
-                            // c_M_1[node] = c_M_0[node+N_PLANE_NODES];
                             c_M_1[node] = pre_1 * c_M_1[node+N_PLANE_NODES] - pre_2 * c_M_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node+N_PLANE_NODES];
-                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
-                    }else if (i == (nodes-1)){
-                        // top face
+                    }
+                    // top face
+                    else if (i == (nodes-1)){
                         if (material_type[node] == 1){
-                            // c_PIdot_1[node] =  c_PIdot_0[node-N_PLANE_NODES]; 
-                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-N_PLANE_NODES] - pre_2 * c_PIdot_1[node-N_PLANE_NODES-N_PLANE_NODES]; // second order approximation
+                            // apply neumann bc using a second order approximation
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-N_PLANE_NODES] - pre_2 * c_PIdot_1[node-N_PLANE_NODES-N_PLANE_NODES]; 
                             err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
 
-                            // c_Mdot_1[node] = c_Mdot_0[node-N_PLANE_NODES]; 
-                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-N_PLANE_NODES] - pre_2 * c_Mdot_1[node-N_PLANE_NODES-N_PLANE_NODES]; // second order approximation
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-N_PLANE_NODES] - pre_2 * c_Mdot_1[node-N_PLANE_NODES-N_PLANE_NODES]; 
                             err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
 
-                            // c_M_1[node] = c_M_0[node-N_PLANE_NODES];
-                            c_M_1[node] = pre_1 * c_M_1[node-N_PLANE_NODES] - pre_2 * c_M_1[node-N_PLANE_NODES-N_PLANE_NODES]; // second order approximation
+                            c_M_1[node] = pre_1 * c_M_1[node-N_PLANE_NODES] - pre_2 * c_M_1[node-N_PLANE_NODES-N_PLANE_NODES]; 
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node-N_PLANE_NODES];
-                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // wall 1: front wall
                     else if (j == 0){
                         if (material_type[node] == 1){
-                            // c_PIdot_1[node] =  c_PIdot_0[node+nodes]; 
-                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+nodes] - pre_2 * c_PIdot_1[node+nodes+nodes]; // second order approximation
+                            // apply neumann bc using a second order approximation
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+nodes] - pre_2 * c_PIdot_1[node+nodes+nodes]; 
                             err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
 
-                            // c_Mdot_1[node] = c_Mdot_0[node+nodes]; 
-                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node+nodes] - pre_2 * c_Mdot_1[node+nodes+nodes]; // second order approximation
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node+nodes] - pre_2 * c_Mdot_1[node+nodes+nodes]; 
                             err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]);
 
-                            // c_M_1[node] = c_M_0[node+nodes];
-                            c_M_1[node] = pre_1 * c_M_1[node+nodes] - pre_2 * c_M_1[node+nodes+nodes]; // second order approximation
+                            c_M_1[node] = pre_1 * c_M_1[node+nodes] - pre_2 * c_M_1[node+nodes+nodes]; 
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node+nodes];
-                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // wall 3: back wall
                     else if (j == (nodes-1)){
                         if (material_type[node] == 1){
-
-                            // c_PIdot_1[node] =  c_PIdot_0[node-nodes]; 
-                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-nodes] - pre_2 * c_PIdot_1[node-nodes-nodes]; // second order approximation
+                            // apply neumann bc using a second order approximation
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-nodes] - pre_2 * c_PIdot_1[node-nodes-nodes];
                             err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
 
-                            // c_Mdot_1[node] = c_Mdot_0[node-nodes]; 
-                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-nodes] - pre_2 * c_Mdot_1[node-nodes-nodes]; // second order approximation
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-nodes] - pre_2 * c_Mdot_1[node-nodes-nodes];
                             err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
 
-                            // c_M_1[node] = c_M_0[node-nodes];
-                            c_M_1[node] = pre_1 * c_M_1[node-nodes] - pre_2 * c_M_1[node-nodes-nodes]; // second order approximation
+                            c_M_1[node] = pre_1 * c_M_1[node-nodes] - pre_2 * c_M_1[node-nodes-nodes]; 
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node-nodes];
-                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // wall 2: left wall
                     else if (k == 0){
                         if (material_type[node] == 1){
-                            // c_PIdot_1[node] =  c_PIdot_0[node+1]; 
-                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+1] - pre_2 * c_PIdot_1[node+1+1]; // second order approximation
+                            // apply neumann bc using a second order approximation
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+1] - pre_2 * c_PIdot_1[node+1+1]; 
                             err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
 
-                            // c_Mdot_1[node] = c_Mdot_0[node+1]; 
-                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node+1] - pre_2 * c_Mdot_1[node+1+1]; // second order approximation
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node+1] - pre_2 * c_Mdot_1[node+1+1];
                             err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
 
-                            // c_M_1[node] = c_M_0[node+1];
-                            c_M_1[node] = pre_1 * c_M_1[node+1] - pre_2 * c_M_1[node+1+1]; // second order approximation
+                            c_M_1[node] = pre_1 * c_M_1[node+1] - pre_2 * c_M_1[node+1+1];
                             err_step += SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node+1];
-                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // wall 4: right wall
                     else if (k == (nodes-1)){
                         if (material_type[node] == 1){
-                            // c_PIdot_1[node] =  c_PIdot_0[node-1]; 
-                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-1] - pre_2 * c_PIdot_1[node-1-1]; // second order approximation
+                            // apply neumann bc using a second order approximation
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node-1] - pre_2 * c_PIdot_1[node-1-1]; 
                             err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
 
-                            // c_Mdot_1[node] = c_Mdot_0[node-1]; 
-                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-1] - pre_2 * c_Mdot_1[node-1-1]; // second order approximation
+                            c_Mdot_1[node] = pre_1 * c_Mdot_1[node-1] - pre_2 * c_Mdot_1[node-1-1]; 
                             err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
 
-                            // c_M_1[node] = c_M_0[node-1];
-                            c_M_1[node] = pre_1 * c_M_1[node-1] - pre_2 * c_M_1[node-1-1]; // second order approximation
+                            c_M_1[node] = pre_1 * c_M_1[node-1] - pre_2 * c_M_1[node-1-1];
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node-1];
-                        // err_step +=   SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     else{
@@ -1415,9 +1360,7 @@ void Voxel::Config2File(double dt){
     
 
     print_sim_config << "\n==================================" << std::endl;
-    // print_sim_config << "number of particles generated: " << counter1 << std::endl;
     print_sim_config << "solids loading: " << (1.0 * particles_ind.size() / N_VOL_NODES) << std::endl;
-    // print_sim_config << "n_particle_nodes: " << n_particle_nodes << std::endl;
     print_sim_config << "particles_ind.size(): " << particles_ind.size() << std::endl;
     print_sim_config << "\n==================================" << std::endl;
 
@@ -1629,11 +1572,7 @@ void Voxel::AvgConcentrations2File(int counter,
     avg_diff_theta_bot /= N_VOL_NODES;
 
 
-    // avg_bot_theta /= N_PLANE_NODES;
-    // avg_top_theta /= N_PLANE_NODES;
-
     // open file
-    
     if (counter == 0){std::string file_avg_concentrations = file_path + "python_plotting/avg_concentration.csv";
         print_avg_concentrations.open(file_avg_concentrations);
         print_avg_concentrations << "time, avg_top_cPI, avg_tot_cPI, avg_bot_cPI, ";
@@ -2001,6 +1940,7 @@ void Voxel::Simulate(float intensity, float t_final, double dt, int method){
     std::vector<double> c_M_next(N_VOL_NODES,     c_M0);
     std::vector<double> theta_next(N_VOL_NODES,   theta0);
 
+    // compute initial reaction rate constants
     ComputeRxnRateConstants();
 
     // write initial values to files
@@ -2019,15 +1959,6 @@ void Voxel::Simulate(float intensity, float t_final, double dt, int method){
                            c_M,
                            theta,
                            0);
-                           
-    // NonBoundaries2File(0,
-    //                    c_PI,
-    //                    c_PIdot,
-    //                    c_Mdot,
-    //                    c_M,
-    //                    theta,
-    //                    0, 
-    //                    current_coords);
 
     // begin time stepping
     double timer = 0.;
@@ -2035,7 +1966,6 @@ void Voxel::Simulate(float intensity, float t_final, double dt, int method){
     for (int t = 0; t < N_TIME_STEPS; t++) {
 
         total_time[t] = timer;
-
 
         // compute energy intensity and reaction rate constants
         ComputeRxnRateConstants();
@@ -2065,14 +1995,7 @@ void Voxel::Simulate(float intensity, float t_final, double dt, int method){
                                 c_M_next,
                                 theta_next,
                                 timer);
-            // NonBoundaries2File(file_counter,
-            //                    c_PI_next,
-            //                    c_PIdot_next,
-            //                    c_Mdot_next,
-            //                    c_M_next,
-            //                    theta_next,
-            //                    timer,
-            //                    current_coords); 
+
             AvgConcentrations2File(file_counter,
                                    c_PI_next,
                                    c_PIdot_next,

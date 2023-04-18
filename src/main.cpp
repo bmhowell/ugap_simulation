@@ -24,10 +24,10 @@ int main() {
             
     */
 
-    // const int NODE = 21;
-    // const double DT = 1e-3;
-    const int NODE = 51;
-    const double DT = 5e-5;
+    const int NODE = 21;
+    const double DT = 1e-3;
+    // const int NODE = 51;
+    // const double DT = 5e-5;
     double TFINAL = 30.;
     
 
