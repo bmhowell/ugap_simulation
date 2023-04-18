@@ -18,12 +18,15 @@
 
 // overload constructor
 //      - sets the input variables to whatever we pass through the class.
-Voxel::Voxel(int nodes_){
+Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_){
     std::cout << "Initializing parameters: " << std::endl;
 
     // MEMBER VARIABLES
     // representative volume element RVE simulation parameters
-    nodes = nodes_;                                             // | unitless|  total number of nodes
+    I0      = intensity_;                                       // |  W/m^2  |  UV intensity
+    t_final = t_final_;                                         // |    s    |  final time
+    dt      = dt_;                                              // |    s    |  time step
+    nodes   = nodes_;                                           // | unitless|  total number of nodes
 
     // set file path
     file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
@@ -470,18 +473,12 @@ double Voxel::PIdotRate(std::vector<double> &conc_PIdot,
 }
 
 
-
+// equation 3: d[Mdot]/dt = k[PIdot][M] + ∇(k∇_x [Mdot]) - kt [Mdot]^2
 double Voxel::MdotRate(std::vector<double> &conc_Mdot,
                               std::vector<double> &conc_PIdot,
                               std::vector<double> &conc_M,
                               int node) {
-    /*          
-        equation 3:
-    
-        d[Mdot]/dt = k[PIdot][M] + ∇(k∇_x [Mdot]) - kt [Mdot]^2
-    
-    */
-
+    // if material is ugap resin
     if (material_type[node] == 1){
         // material is resin
         double term1, term2, term3, Dm_avg;
@@ -509,34 +506,27 @@ double Voxel::MdotRate(std::vector<double> &conc_Mdot,
 
         diff_mdot[node] = term3;
         return (term1 - term2 + term3);
-        // return (term1 - term2);
     } 
-    
+
+    // material is interface 
     else if (material_type[node] == 2){
-        // material is interface 
         return k_i[node]*c_PIdot[node]*c_M[node] - k_t[node]*conc_Mdot[node]*conc_Mdot[node]; 
     }
     
+    // material is a particle
     else{
-        // material is a particle
         return 0.;
     }
 }
 
 
-
+// equation 4: d[M]/dt = ∇(k∇_x [M]) - k[PI][M] - k[M][Mdot]   
 double Voxel::MRate(std::vector<double> &conc_M,
                                   std::vector<double> &conc_Mdot,
                                   std::vector<double> &conc_PIdot,
                                   int node){
-    
-    /*          
-        equation 4: 
 
-         d[M]/dt = ∇(k∇_x [M]) - k[PI][M] - k[M][Mdot]   
-    */
-    
-
+    // if material is ugap resin 
     if (material_type[node] == 1){
         // material is resin
         double diffuse, consume, Dm_avg;
@@ -585,28 +575,25 @@ double Voxel::MRate(std::vector<double> &conc_M,
         return (diffuse - consume);
     }
 
+    // material is interface - no diffusion, return only consumptions
     else if (material_type[node] == 2){
-        // material is interface - no diffusion, return only consumptions
         return -(k_p[node]*conc_Mdot[node]*conc_M[node]) - (k_i[node]*conc_PIdot[node]*conc_M[node]);
     }
 
+    // material is particle - no reacton
     else{
-        // material is particle - no reacton
         return 0.;
     }
 }
 
-
+// equation 5: dθ/dt = ( ∇_x·(K ∇_x θ) + k_p [M] [M_n·] ΔH + ε [PI] I ) / ρ / C 
 double Voxel::TempRate(std::vector<double> &temperature,
                        std::vector<double> &conc_M,
                        std::vector<double> &conc_Mdot,
                        std::vector<double> &conc_PI,
                        std::vector<double> &conc_PIdot,
                        double intensity, int node){
-    /*
-        equation 5
-         dθ/dt = ( ∇_x·(K ∇_x θ) + k_p [M] [M_n·] ΔH + ε [PI] I ) / ρ / C     
-    */
+
     double heat_diffuse, heat_rxn, heat_uv;
     double therm_cond_avg[6]; 
 
@@ -629,21 +616,21 @@ double Voxel::TempRate(std::vector<double> &temperature,
                     ) * denom; 
 
     // compute the heat release by all exothermic (bond formation) reactions
-    // heat_rxn = (k_p[node] * conc_M[node] * conc_Mdot[node] ) * dHp;
     heat_rxn = (  k_i[node] * conc_PIdot[node] * conc_M[node]
                 + k_p[node] * conc_Mdot[node]  * conc_M[node]
                 + k_t[node] * conc_Mdot[node]  * conc_Mdot[node]
                 ) * dHp;
 
+    // material is resin
     if (material_type[node] == 1){
-        // material is resin
         heat_uv = eps
                 * intensity
                 * conc_PI[node]
                 * exp(  -eps*conc_PI[node]*(len_block-current_coords[2]*coord_map_const)  );
     }
+
+    // material is interface
     else if (material_type[node] == 2){
-        // material is interface
         heat_uv = (   eps
                     * intensity
                     * conc_PI[node]
@@ -729,10 +716,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                         c_Mdot[node]  = c_Mdot[node+N_PLANE_NODES]; 
                         c_M[node]     = c_M[node+N_PLANE_NODES];  
                     }
-
-                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                    // theta[node] = theta[node+N_PLANE_NODES];
-
                 }
 
                 // top face
@@ -743,9 +726,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                         c_Mdot[node]  = c_Mdot[node-N_PLANE_NODES];
                         c_M[node]     = c_M[node-N_PLANE_NODES]; 
                         }
-
-                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                    // theta[node] = theta[node-N_PLANE_NODES];   
                 } 
                 
                 // wall 1: front wall 
@@ -756,9 +736,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                         c_Mdot[node]  = c_Mdot[node+nodes]; 
                         c_M[node]     = c_M[node+nodes];    
                     }
-
-                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                    // theta[node] = theta[node+nodes]; 
                 }
                 
                 // wall 3: back wall
@@ -769,9 +746,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                         c_Mdot[node]  = c_Mdot[node-nodes]; 
                         c_M[node]     = c_M[node-nodes];
                     }
-
-                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                    // theta[node] = theta[node-nodes];
                 }
 
                 // wall 2: left wall
@@ -782,9 +756,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                         c_Mdot[node]  = c_Mdot[node+1]; 
                         c_M[node]     = c_M[node+1]; 
                     }
-
-                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                    // theta[node] = theta[node+1];
                 }
 
                 // wall 4: right wall
@@ -795,9 +766,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                         c_Mdot[node]  = c_Mdot[node-1]; 
                         c_M[node]     = c_M[node-1]; 
                     }
-
-                    // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                    // theta[node] = theta[node-1];
                 }else{
                     throw std::invalid_argument("--- forward euler: boundary condition error ---");
                 }
@@ -807,9 +775,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                 throw std::invalid_argument("--- forward euler: node error ---");
             }
         }
-        //         }
-        //     }
-        // }
     }
 
     // backward euler
@@ -946,7 +911,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                     }
 
                     // ENFORCE NEUMANN BOUNDARY CONDITIONS
-
                     // bottom face
                     if (i == 0){
                         if (material_type[node] == 1){
@@ -961,11 +925,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                             c_M_1[node] = c_M_0[node+N_PLANE_NODES];
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATIONs
-                        // theta_1[node] = theta_0[node+N_PLANE_NODES];
-                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // top face
@@ -981,11 +940,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                             c_M_1[node] = c_M_0[node-N_PLANE_NODES];
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-                        
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node-N_PLANE_NODES];
-                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // wall 1: front wall
@@ -1000,11 +954,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                             c_M_1[node] = c_M_0[node+nodes];
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node+nodes];
-                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // wall 3: back wall
@@ -1020,11 +969,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                             c_M_1[node]     = c_M_0[node-nodes];
                             err_step       +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node-nodes];
-                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // wall 2: left wall
@@ -1039,11 +983,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                             c_M_1[node]     = c_M_0[node+1];
                             err_step       += SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node+1];
-                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
-
                     }
 
                     // wall 4: right wall
@@ -1058,11 +997,6 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                             c_M_1[node] = c_M_0[node-1];
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
                         }
-
-                        // // NEUMANN BOUNDARY CONDITIONS FOR HEAT EQUATION
-                        // theta_1[node] = theta_0[node-1];
-                        // err_step += SquaredDiff(theta_0[node], theta_1[node]);
-
                     }else{
                         throw std::invalid_argument("--- Backward Euler: boundary condition error ---");
                     }
@@ -1216,17 +1150,17 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
                     }
 
                     // ENFORCE NEUMANN BOUNDARY CONDITIONS
-
                     // bottom face
                     double pre_1 = 4 / 3, pre_2 = 1 / 3; 
                     if (i == 0){
+                        // if material is UGAP resin
                         if (material_type[node] == 1){
-                            // ugap resin
-                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+N_PLANE_NODES] - pre_2 * c_PIdot_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
-                            err_step +=   SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
+                            // apply neumann bc using a second order approximation
+                            c_PIdot_1[node] = pre_1 * c_PIdot_1[node+N_PLANE_NODES] - pre_2 * c_PIdot_1[node+N_PLANE_NODES+N_PLANE_NODES]; 
+                            err_step       += SquaredDiff(c_PIdot_0[node], c_PIdot_1[node]);
 
                             c_Mdot_1[node] = pre_1 * c_Mdot_1[node+N_PLANE_NODES] - pre_2 * c_Mdot_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
-                            err_step +=   SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
+                            err_step      += SquaredDiff(c_Mdot_0[node], c_Mdot_1[node]); 
                             
                             c_M_1[node] = pre_1 * c_M_1[node+N_PLANE_NODES] - pre_2 * c_M_1[node+N_PLANE_NODES+N_PLANE_NODES]; // second order approximation
                             err_step +=   SquaredDiff(c_M_0[node], c_M_1[node]);
@@ -1905,7 +1839,7 @@ void Voxel::NonBoundaries2File( int counter,
 }
 
 
-void Voxel::Simulate(float intensity, float t_final, double dt, int method){
+void Voxel::Simulate(int method){
     /* run_simulation - updates "uv_values" vector with corresponding intensity values
      *                  as computed by Beer-Lambert
      *
@@ -1919,10 +1853,14 @@ void Voxel::Simulate(float intensity, float t_final, double dt, int method){
 
 
     // time discretization -> [0., dt, 2*dt, ..., T]
-    total_time = t_final; 
-    int N_TIME_STEPS = total_time / dt;
+    int N_TIME_STEPS = t_final / dt;
     int print_iter = N_TIME_STEPS / 600; 
     std::vector<double> total_time(N_TIME_STEPS, 0);
+    std::cout << "==================================" << std::endl;
+    std::cout << "Simulation parameters" << std::endl;
+    std::cout << "Total time: " << t_final << std::endl;
+    std::cout << "Number of time steps: " << N_TIME_STEPS << std::endl;
+    std::cout << "Print iteration: " << print_iter << std::endl;
     std::cout << "==================================" << std::endl;
     std::cout << "Numerical parameters" << std::endl;
     std::cout << "h: " << h << std::endl;
@@ -1971,7 +1909,7 @@ void Voxel::Simulate(float intensity, float t_final, double dt, int method){
         ComputeRxnRateConstants();
 
         // solve system of equations
-        SolveSystem(c_PI_next, c_PIdot_next, c_Mdot_next, c_M_next, theta_next, intensity, dt, method);
+        SolveSystem(c_PI_next, c_PIdot_next, c_Mdot_next, c_M_next, theta_next, I0, dt, method);
 
         c_PI = c_PI_next;
         c_PIdot = c_PIdot_next;

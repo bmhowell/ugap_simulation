@@ -24,12 +24,14 @@ private:
     std::string file_path;                                  // set correct file path to output dependent on computer
 
     // simulation parameters
-    int nodes;
+    float  I0;                                              // |  W/m^2  |  incident light intensity
+    float  t_final;                                         // |    s    |  final simulation time
+    double dt;                                              // |    s    |  time step discretization
+    int    nodes;
+    
     float total_time;                                       // | unitless|  total number of nodes
     float coord_map_const;
-//    float t_final;                                          // |    s    |  final simulation time
-//    double dt;                                              // |    s    |  time step discretization
-//    int N_TIME_STEPS;                                       // | unitless|  total number of timesteps
+
     double theta0;                                          // |    K    |  initial temperature
     int interfacial_nodes;                                  // |   ---   |  interfacial thickness parameter
     double len_block;                                       // |    m    |  sample length
@@ -144,7 +146,7 @@ private:
 
 public:
     /* overload constructor */
-    Voxel(int nodes_);
+    Voxel(float intensity_, float t_final_, double dt_, int nodes_);
 
     /* destructor */
     ~Voxel();
@@ -263,7 +265,7 @@ public:
                             int (&coords)[3]);
 
 
-    void Simulate(float intensity, float t_final, double dt, int method);
+    void Simulate(int method);
         // Simulate - runs simulation of UV curing kinetics
 
 };
