@@ -13,7 +13,7 @@ from matplotlib.ticker import ScalarFormatter
 skip = 10
 
 # central comuting 
-dir_path = '/home/brian/Documents/berkeley/ugap_simulation/output/python_plotting/uv_sweep'
+dir_path = '/home/brian/Documents/berkeley/ugap_simulation/output/python_plotting/'
 
 # macbook computing
 # dir_path = 
@@ -55,7 +55,8 @@ for filename in csv_files_sorted:
 # loop through all data and plot conversion
 fs_ = 25
 bump = 0
-I_UV = [2, 6, 10, 50, 100]
+
+DT = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3]
 plt.figure(figsize=(10, 7.5)) 
 plt.title(r'conversion of M', fontsize=fs_)
 plt.ylabel(r'conversion (%)', fontsize=fs_-5)
@@ -68,11 +69,11 @@ for i in range(len(time)-bump):
     avg_tot_cM_plot = avg_tot_cM[i]
     
     plt.scatter(time_plot, (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0]), 
-                s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
+                s=150, label='time step $k$: {}$s$'.format(DT[i]))
     
     
 plt.legend(fontsize=fs_-5)
-plt.savefig("uv_sweep/uv_sweep_figs/multi_conversion.png")
+plt.savefig("dt_sweep/dt_sweep_figs/multi_conversion.png")
 plt.show()
 
 
@@ -83,17 +84,17 @@ plt.ylabel(r'Temperature ($K$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.ylim(303.15, 303.2)
+
 for i in range(len(time) - bump):
     time_plot       = time[i]
     avg_tot_theta_plot = avg_tot_theta[i]
     
     plt.scatter(time_plot, avg_tot_theta_plot, 
-                s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
+                s=150, label='time step $k$: {}$s$'.format(DT[i]))
     
     
 plt.legend(fontsize=fs_-5)
-plt.savefig("uv_sweep/uv_sweep_figs/multi_theta.png")
+plt.savefig("dt_sweep/dt_sweep_figs/multi_theta.png")
 plt.show()
 
 # loop through all data and plot cPI
@@ -109,10 +110,10 @@ for i in range(len(time)-bump):
     avg_tot_cPI_plot = avg_tot_cPI[i]
     
     plt.scatter(time_plot, np.array(avg_tot_cPI_plot), 
-                s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
+                s=150, label='time step $k$: {}$s$'.format(DT[i]))
     
 plt.legend(fontsize=fs_-5)
-plt.savefig("uv_sweep/uv_sweep_figs/multi_cPI.png")
+plt.savefig("dt_sweep/dt_sweep_figs/multi_cPI.png")
 plt.show()
 
 # loop through all data and plot cPIdot
@@ -128,10 +129,10 @@ for i in range(len(time)-bump):
     avg_tot_cPIdot_plot = avg_tot_cPIdot[i]
     
     plt.scatter(time_plot, np.array(avg_tot_cPIdot_plot), 
-                s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
+                s=150, label='time step $k$: {}$s$'.format(DT[i]))
 
 plt.legend(fontsize=fs_-5)
-plt.savefig("uv_sweep/uv_sweep_figs/multi_cPIdot.png")
+plt.savefig("dt_sweep/dt_sweep_figs/multi_cPIdot.png")
 plt.show()
 
 # loop through all data and plot cMdot
@@ -147,10 +148,10 @@ for i in range(len(time)-bump):
     avg_tot_cMdot_plot = avg_tot_cMdot[i]
     
     plt.scatter(time_plot, np.array(avg_tot_cMdot_plot), 
-                s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
+                s=150, label='time step $k$: {}$s$'.format(DT[i]))
     
 plt.legend(fontsize=fs_-5)
-plt.savefig("uv_sweep/uv_sweep_figs/multi_cMdot.png")
+plt.savefig("dt_sweep/dt_sweep_figs/multi_cMdot.png")
 plt.show()
 
 # loop through all data and plot k_t
@@ -166,10 +167,10 @@ for i in range(len(time)-bump):
     avg_k_t_plot = avg_k_t[i]
     
     plt.scatter(time_plot, np.array(avg_k_t_plot), 
-                s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
+                s=150, label='time step $k$: {}$s$'.format(DT[i]))
     
 plt.legend(fontsize=fs_-5)
-plt.savefig("uv_sweep/uv_sweep_figs/multi_k_t.png")
+plt.savefig("dt_sweep/dt_sweep_figs/multi_k_t.png")
 plt.show()
 
 # loop through all data and plot k_p
@@ -185,10 +186,10 @@ for i in range(len(time)-bump):
     avg_k_p_plot = avg_k_p[i]
     
     plt.scatter(time_plot, np.array(avg_k_p_plot), 
-                s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
+                s=150, label='time step $k$: {}$s$'.format(DT[i]))
 
 plt.legend(fontsize=fs_-5)
-plt.savefig("uv_sweep/uv_sweep_figs/multi_k_p.png")
+plt.savefig("dt_sweep/dt_sweep_figs/multi_k_p.png")
 plt.show()
 
 

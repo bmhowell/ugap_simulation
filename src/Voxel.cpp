@@ -305,10 +305,12 @@ void Voxel::ComputeParticles(double radius_1, double solids_loading) {
 
         // assign particle material properties
         for (int i = 0; i < particles_ind.size(); i++){
+
+            // assign type particle
             material_type[particles_ind[i]]                 = 0;
 
             // thermal properties
-            density[particles_ind[i]] = rho_nacl;
+            density[particles_ind[i]]                       = rho_nacl;
             heat_capacity[particles_ind[i]]                 = Cp_nacl;
             therm_cond[particles_ind[i]]                    = K_thermal_nacl;
 
@@ -330,9 +332,9 @@ void Voxel::ComputeParticles(double radius_1, double solids_loading) {
             std::cout << "--- PARTICLE ITERATION THRESHOLD ---" << std::endl;
         }
         if (tot_part_nodes >= n_particle_nodes){
-            std::cout << "N_VOL_NODES: "          << N_VOL_NODES                                 << std::endl;
+            std::cout << "N_VOL_NODES: "    << N_VOL_NODES                          << std::endl;
             std::cout << "tot_part_nodes: " << tot_part_nodes                       << std::endl;
-            std::cout << "solids loading: "       <<  (1.0 * tot_part_nodes / N_VOL_NODES) << std::endl;
+            std::cout << "solids loading: " << (1.0 * tot_part_nodes / N_VOL_NODES) << std::endl;
         }
     }
 
@@ -1291,7 +1293,8 @@ void Voxel::Config2File(double dt){
     print_sim_config << "Numerical parameters" << std::endl;
     print_sim_config << "h: " << h << std::endl;
     print_sim_config << "dt: " << dt << std::endl;
-    print_sim_config << "CFL: " << dt / h << std::endl;
+    print_sim_config << "Diffusion CFL: " << Dm0 * dt / h / h << std::endl;
+    print_sim_config << "Thermal CFL: " << dt / h / rho_UGAP / Cp_nacl << std::endl;
     
 
     print_sim_config << "\n==================================" << std::endl;
@@ -1510,7 +1513,7 @@ void Voxel::AvgConcentrations2File(int counter,
     // open file
     if (counter == 0){std::string file_avg_concentrations = file_path + "python_plotting/avg_concentration_simID_" + std::to_string(sim_id) + ".csv";
         print_avg_concentrations.open(file_avg_concentrations);
-        print_avg_concentrations << "time, avg_top_cPI, avg_tot_cPI, avg_bot_cPI, ";
+        print_avg_concentrations <<       "time, avg_top_cPI, avg_tot_cPI, avg_bot_cPI, ";
         print_avg_concentrations <<       "avg_top_cPIdot, avg_tot_cPIdot, avg_bot_cPIdot, "; 
         print_avg_concentrations <<       "avg_top_cMdot, avg_tot_cMdot, avg_bot_cMdot, ";
         print_avg_concentrations <<       "avg_top_cM, avg_tot_cM, avg_bot_cM, "; 
@@ -1525,15 +1528,16 @@ void Voxel::AvgConcentrations2File(int counter,
     }
 
     print_avg_concentrations << time << ", ";
-    print_avg_concentrations << avg_top_cPI << ", " << avg_tot_cPI << ", " << avg_bot_cPI << ", ";
-    print_avg_concentrations << avg_top_cPIdot << ", " << avg_tot_cPIdot << ", " << avg_bot_cPIdot << ", ";
-    print_avg_concentrations << avg_top_cMdot << ", " << avg_tot_cMdot << ", " << avg_bot_cMdot << ", ";
-    print_avg_concentrations << avg_top_cM << ", " << avg_tot_cM << ", " << avg_bot_cM << ", ";
-    print_avg_concentrations << avg_tot_theta << ", " << avg_free_volume << ", " << avg_k_t << ", " << avg_k_p << ", "; 
-    print_avg_concentrations << avg_diff_pdot_top << ", " << avg_diff_pdot << ", " << avg_diff_pdot_bot << ", ";
-    print_avg_concentrations << avg_diff_mdot_top << ", " << avg_diff_mdot << ", " << avg_diff_mdot_bot << ", ";
-    print_avg_concentrations << avg_diff_m_top << ", " << avg_diff_m << ", " << avg_diff_m_bot << ", ";
-    print_avg_concentrations << avg_diff_theta_top << ", " << avg_diff_theta << ", " << avg_diff_theta_bot << std::endl;
+    print_avg_concentrations << avg_top_cPI        << ", " << avg_tot_cPI     << ", " << avg_bot_cPI        << ", ";
+    print_avg_concentrations << avg_top_cPIdot     << ", " << avg_tot_cPIdot  << ", " << avg_bot_cPIdot     << ", ";
+    print_avg_concentrations << avg_top_cMdot      << ", " << avg_tot_cMdot   << ", " << avg_bot_cMdot      << ", ";
+    print_avg_concentrations << avg_top_cM         << ", " << avg_tot_cM      << ", " << avg_bot_cM         << ", ";
+    print_avg_concentrations << avg_tot_theta      << ", " << avg_free_volume << ", " << avg_k_t            << ", "; 
+    print_avg_concentrations << avg_k_p                                                                     << ", "; 
+    print_avg_concentrations << avg_diff_pdot_top  << ", " << avg_diff_pdot   << ", " << avg_diff_pdot_bot  << ", ";
+    print_avg_concentrations << avg_diff_mdot_top  << ", " << avg_diff_mdot   << ", " << avg_diff_mdot_bot  << ", ";
+    print_avg_concentrations << avg_diff_m_top     << ", " << avg_diff_m      << ", " << avg_diff_m_bot     << ", ";
+    print_avg_concentrations << avg_diff_theta_top << ", " << avg_diff_theta  << ", " << avg_diff_theta_bot << std::endl;
 
     // print_avg_concentrations << avg_diff_pdot << ", " << avg_diff_mdot << ", " << avg_diff_m << ", " << avg_diff_theta << std::endl;
     
@@ -1855,19 +1859,22 @@ void Voxel::Simulate(int method, int save_voxel){
 
     // time discretization -> [0., dt, 2*dt, ..., T]
     int N_TIME_STEPS = t_final / dt;
-    int print_iter = N_TIME_STEPS / 600; 
+    int print_iter   = N_TIME_STEPS / 600; 
+
     std::vector<double> total_time(N_TIME_STEPS, 0);
-    std::cout << "==================================" << std::endl;
-    std::cout << "Simulation parameters" << std::endl;
-    std::cout << "Total time: " << t_final << std::endl;
-    std::cout << "Number of time steps: " << N_TIME_STEPS << std::endl;
-    std::cout << "Print iteration: " << print_iter << std::endl;
-    std::cout << "==================================" << std::endl;
-    std::cout << "Numerical parameters" << std::endl;
-    std::cout << "h: " << h << std::endl;
-    std::cout << "dt: " << dt << std::endl;
-    std::cout << "CFL: " << dt / h << std::endl;
-    std::cout << "\n==================================" << std::endl;
+
+    std::cout << "=================================="               << std::endl;
+    std::cout << "Simulation parameters"                            << std::endl;
+    std::cout << "Total time: "           << t_final                << std::endl;
+    std::cout << "Number of time steps: " << N_TIME_STEPS           << std::endl;
+    std::cout << "Print iteration: "      << print_iter             << std::endl;
+    std::cout << "=================================="               << std::endl;
+    std::cout << "Numerical parameters"                             << std::endl;
+    std::cout << "h: "   << h                                       << std::endl;
+    std::cout << "dt: "  << dt                                      << std::endl;
+    std::cout << "Diffusion CFL: "   << Dm0 * dt / h / h            << std::endl;
+    std::cout << "Thermal CFL: "     << dt / h / rho_UGAP / Cp_nacl << std::endl;
+    std::cout << "\n=================================="             << std::endl;
 
     Config2File(dt); 
 
@@ -1914,16 +1921,16 @@ void Voxel::Simulate(int method, int save_voxel){
         // solve system of equations
         SolveSystem(c_PI_next, c_PIdot_next, c_Mdot_next, c_M_next, theta_next, I0, dt, method);
 
-        c_PI = c_PI_next;
+        c_PI    = c_PI_next;
         c_PIdot = c_PIdot_next;
-        c_Mdot = c_Mdot_next;
-        c_M = c_M_next;
-        theta = theta_next;
+        c_Mdot  = c_Mdot_next;
+        c_M     = c_M_next;
+        theta   = theta_next;
 
         // display time
         timer += dt;
-        if (t % 100 == 0){
-            std::cout << "iteration: " << t << " / " << N_TIME_STEPS << std::endl;
+        if ((t + 1) % 100 == 0){
+            std::cout << "iteration: " << t + 1 << " / " << N_TIME_STEPS + 1 << std::endl;
         }
 
         // store solution results (every 100 steps) including last time step
