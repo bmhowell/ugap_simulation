@@ -72,8 +72,8 @@ for i in range(len(time)-bump):
     
     
 plt.legend(fontsize=fs_-5)
+plt.savefig("uv_sweep/uv_sweep_figs/multi_conversion.png")
 plt.show()
-plt.savefig("figs/multi_conversion.png")
 
 
 # loop through all data and plot theta
@@ -93,8 +93,8 @@ for i in range(len(time) - bump):
     
     
 plt.legend(fontsize=fs_-5)
+plt.savefig("uv_sweep/uv_sweep_figs/multi_theta.png")
 plt.show()
-plt.savefig("figs/multi_theta.png")
 
 # loop through all data and plot cPI
 plt.figure(figsize=(10, 7.5))
@@ -112,8 +112,8 @@ for i in range(len(time)-bump):
                 s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
     
 plt.legend(fontsize=fs_-5)
+plt.savefig("uv_sweep/uv_sweep_figs/multi_cPI.png")
 plt.show()
-plt.savefig("figs/multi_cPI.png")
 
 # loop through all data and plot cPIdot
 plt.figure(figsize=(10, 7.5))
@@ -131,8 +131,8 @@ for i in range(len(time)-bump):
                 s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
 
 plt.legend(fontsize=fs_-5)
+plt.savefig("uv_sweep/uv_sweep_figs/multi_cPIdot.png")
 plt.show()
-plt.savefig("figs/multi_cPIdot.png")
 
 # loop through all data and plot cMdot
 plt.figure(figsize=(10, 7.5))
@@ -150,8 +150,8 @@ for i in range(len(time)-bump):
                 s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
     
 plt.legend(fontsize=fs_-5)
+plt.savefig("uv_sweep/uv_sweep_figs//multi_cMdot.png")
 plt.show()
-plt.savefig("figs/multi_cMdot.png")
 
 # loop through all data and plot k_t
 plt.figure(figsize=(10, 7.5))
@@ -169,8 +169,8 @@ for i in range(len(time)-bump):
                 s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
     
 plt.legend(fontsize=fs_-5)
+plt.savefig("uv_sweep/uv_sweep_figs/multi_k_t.png")
 plt.show()
-plt.savefig("figs/multi_k_t.png")
 
 # loop through all data and plot k_p
 plt.figure(figsize=(10, 7.5))
@@ -188,8 +188,8 @@ for i in range(len(time)-bump):
                 s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
 
 plt.legend(fontsize=fs_-5)
+plt.savefig("uv_sweep/uv_sweep_figs/multi_k_p.png")
 plt.show()
-plt.savefig("figs/multi_k_p.png")
 
 
 # %%
