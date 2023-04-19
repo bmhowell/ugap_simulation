@@ -24,6 +24,7 @@ private:
     std::string file_path;                                  // set correct file path to output dependent on computer
 
     // simulation parameters
+    int    sim_id;                                          // |   ---   |  simulation ID
     float  I0;                                              // |  W/m^2  |  incident light intensity
     float  t_final;                                         // |    s    |  final simulation time
     double dt;                                              // |    s    |  time step discretization
@@ -146,23 +147,10 @@ private:
 
 public:
     /* overload constructor */
-    Voxel(float intensity_, float t_final_, double dt_, int nodes_);
+    Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id);
 
     /* destructor */
     ~Voxel();
-
-    // // accessor functions
-    // void GetBoundaryNodes();
-    //     // get_b_nodes(): Returns nodes that are on the boundary
-
-    // void GetNonBoundaryNodes();
-
-    /* Simulation mutator functions
-     *
-     * Simulation functions required for solving temperature distribution
-     * problem.
-     *
-     * */
 
     // helper functions
     double SquaredDiff(double val_1, double val_2);
@@ -265,7 +253,7 @@ public:
                             int (&coords)[3]);
 
 
-    void Simulate(int method);
+    void Simulate(int method, int save_voxel);
         // Simulate - runs simulation of UV curing kinetics
 
 };

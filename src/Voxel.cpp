@@ -18,19 +18,20 @@
 
 // overload constructor
 //      - sets the input variables to whatever we pass through the class.
-Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_){
+Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id_){
     std::cout << "Initializing parameters: " << std::endl;
 
     // MEMBER VARIABLES
     // representative volume element RVE simulation parameters
+    sim_id  = sim_id_;                                          // |   ---   |  simulation id
     I0      = intensity_;                                       // |  W/m^2  |  UV intensity
     t_final = t_final_;                                         // |    s    |  final time
     dt      = dt_;                                              // |    s    |  time step
     nodes   = nodes_;                                           // | unitless|  total number of nodes
 
     // set file path
-    file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
-    // file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
+    // file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
+    file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
 
     interfacial_nodes = 1;                                      // |   ---   |  interfacial thickness parameter
     len_block = 0.00084;                                        // |    m    |  sample length
@@ -1507,7 +1508,7 @@ void Voxel::AvgConcentrations2File(int counter,
 
 
     // open file
-    if (counter == 0){std::string file_avg_concentrations = file_path + "python_plotting/avg_concentration.csv";
+    if (counter == 0){std::string file_avg_concentrations = file_path + "python_plotting/avg_concentration_simID_" + std::to_string(sim_id) + ".csv";
         print_avg_concentrations.open(file_avg_concentrations);
         print_avg_concentrations << "time, avg_top_cPI, avg_tot_cPI, avg_bot_cPI, ";
         print_avg_concentrations <<       "avg_top_cPIdot, avg_tot_cPIdot, avg_bot_cPIdot, "; 
@@ -1839,7 +1840,7 @@ void Voxel::NonBoundaries2File( int counter,
 }
 
 
-void Voxel::Simulate(int method){
+void Voxel::Simulate(int method, int save_voxel){
     /* run_simulation - updates "uv_values" vector with corresponding intensity values
      *                  as computed by Beer-Lambert
      *
@@ -1882,13 +1883,15 @@ void Voxel::Simulate(int method){
     ComputeRxnRateConstants();
 
     // write initial values to files
-    Concentrations2File(0,
-                        c_PI,
-                        c_PIdot,
-                        c_Mdot,
-                        c_M,
-                        theta,
-                        0);
+    if (save_voxel == 1){
+        Concentrations2File(0,
+                            c_PI,
+                            c_PIdot,
+                            c_Mdot,
+                            c_M,
+                            theta,
+                            0);
+    }
     
     AvgConcentrations2File(0,
                            c_PI,
@@ -1926,13 +1929,15 @@ void Voxel::Simulate(int method){
         // store solution results (every 100 steps) including last time step
         if (t % print_iter == 0 || t == N_TIME_STEPS-1){
 
-            Concentrations2File(file_counter,
-                                c_PI_next,
-                                c_PIdot_next,
-                                c_Mdot_next,
-                                c_M_next,
-                                theta_next,
-                                timer);
+            if (save_voxel == 1){
+                Concentrations2File(0,
+                                    c_PI,
+                                    c_PIdot,
+                                    c_Mdot,
+                                    c_M,
+                                    theta,
+                                    0);
+            }
 
             AvgConcentrations2File(file_counter,
                                    c_PI_next,
