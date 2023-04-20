@@ -147,7 +147,7 @@ private:
 
 public:
     /* overload constructor */
-    Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id);
+    Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id, double temp_amb_);
 
     /* destructor */
     ~Voxel();

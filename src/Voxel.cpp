@@ -18,7 +18,7 @@
 
 // overload constructor
 //      - sets the input variables to whatever we pass through the class.
-Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id_){
+Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id_, double temp_amb_){
     std::cout << "Initializing parameters: " << std::endl;
 
     // MEMBER VARIABLES
@@ -28,10 +28,11 @@ Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_i
     t_final = t_final_;                                         // |    s    |  final time
     dt      = dt_;                                              // |    s    |  time step
     nodes   = nodes_;                                           // | unitless|  total number of nodes
+    theta0  = temp_amb_;                                        // |    K    | initial and ambient temperature
 
     // set file path
-    // file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
-    file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
+    file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
+    // file_path = "/home/brian/Documents/berkeley/ugap_simulation/output/";      // LINUX CENTRAL COMPUTING
 
     interfacial_nodes = 1;                                      // |   ---   |  interfacial thickness parameter
     len_block = 0.00084;                                        // |    m    |  sample length
@@ -100,7 +101,6 @@ Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_i
     f_ci = 0.042;                                               // | unitless| critical free volume, initiation (bowman lit.)
 
     // thermal properties
-    theta0         = 303.15;                                    // |    K    | initial and ambient temperature
     dHp            = 5.48e4;                                    // |  J/mol  | heat of polymerization of acrylate monomers (bowman lit.)
     Cp_nacl        = 880;                                       // | J/kg/K  | heat capacity of NaCl
     Cp_pea         = 180.3;                                     // | J/mol/K | heat capacity of PEA @ 298K - https://polymerdatabase.com/polymer%20physics/Cp%20Table.html
