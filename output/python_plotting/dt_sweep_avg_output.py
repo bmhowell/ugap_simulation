@@ -9,14 +9,13 @@ import matplotlib.cm as cm
 import os
 from matplotlib.ticker import ScalarFormatter
 
-#%%
 skip = 10
 
 # central comuting 
-dir_path = '/home/brian/Documents/berkeley/ugap_simulation/output/python_plotting/'
+# dir_path = '/home/brian/Documents/berkeley/ugap_simulation/output/python_plotting/'
 
 # macbook computing
-# dir_path = 
+dir_path = '/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/python_plotting'
 
 time            = []
 avg_tot_cPI     = []
@@ -41,156 +40,162 @@ for filename in csv_files_sorted:
     
     time.append(df['time'].tolist()[::skip])
 
-    avg_tot_cPI.append(df[' avg_tot_cPI'].tolist()[::skip])
-    avg_tot_cPIdot.append(df[' avg_tot_cPIdot'].tolist()[::skip])
-    avg_tot_cMdot.append(df[' avg_tot_cMdot'].tolist()[::skip])
-    avg_tot_cM.append(df[' avg_tot_cM'].tolist()[::skip])
-    avg_tot_theta.append(df[' avg_tot_theta'].tolist()[::skip])
+    avg_tot_cPI.append(    df[' avg_tot_cPI'].tolist()[::skip])
+    avg_tot_cPIdot.append( df[' avg_tot_cPIdot'].tolist()[::skip])
+    avg_tot_cMdot.append(  df[' avg_tot_cMdot'].tolist()[::skip])
+    avg_tot_cM.append(     df[' avg_tot_cM'].tolist()[::skip])
+    avg_tot_theta.append(  df[' avg_tot_theta'].tolist()[::skip])
     avg_free_volume.append(df[' avg_free_volume'].tolist()[::skip])
-    avg_k_t.append(df[' avg_k_t'].tolist()[::skip])
-    avg_k_p.append(df[' avg_k_p'].tolist()[::skip])
+    avg_k_t.append(        df[' avg_k_t'].tolist()[::skip])
+    avg_k_p.append(        df[' avg_k_p'].tolist()[::skip])
 
     counter += 1
 
 # loop through all data and plot conversion
 fs_ = 25
-bump = 0
+bump = 1
+exact = -1
 
-DT = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3]
+DT = [0.001, 0.0005, 0.0001, 5e-05, 1e-05]
+
 plt.figure(figsize=(10, 7.5)) 
-plt.title(r'conversion of M', fontsize=fs_)
-plt.ylabel(r'conversion (%)', fontsize=fs_-5)
-plt.xlabel('time ($s$)', fontsize=fs_-5)
+plt.title(r'error: conversion of M', fontsize=fs_)
+plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
+plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-plt.ylim(0, 1)
+
+# compute 'exact' converion
+exact_conv = (1 - np.array(avg_tot_cM[exact]) / avg_tot_cM[exact][0])
 for i in range(len(time)-bump):
     time_plot       = time[i]
+    dt              = DT[i]
     avg_tot_cM_plot = avg_tot_cM[i]
-    
-    plt.scatter(time_plot, (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0]), 
-                s=150, label='time step $k$: {}$s$'.format(DT[i]))
-    
+    conv = (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0])
+    err  = np.linalg.norm(conv - exact_conv)
+    print('error: ', err)
+    plt.scatter(dt, err, s=150, c='g', label='time step $k$: {}$s$'.format(dt))
     
 plt.legend(fontsize=fs_-5)
-plt.savefig("dt_sweep/dt_sweep_figs/multi_conversion.png")
+plt.yscale('log')
+plt.xscale('log')
+# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_conversion.png")
 plt.show()
 
+# compute 'exact' temperature
+exact_temp = np.array(avg_tot_theta[exact])
 
 # loop through all data and plot theta
 plt.figure(figsize=(10, 7.5)) 
-plt.title(r'Average temperature', fontsize=fs_)
-plt.ylabel(r'Temperature ($K$)', fontsize=fs_-5)
-plt.xlabel('time ($s$)', fontsize=fs_-5)
-plt.xticks(fontsize=fs_-5)
-plt.yticks(fontsize=fs_-5)
+plt.title(r'error: average temperature', fontsize=fs_)
+plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
+plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
 
 for i in range(len(time) - bump):
     time_plot       = time[i]
-    avg_tot_theta_plot = avg_tot_theta[i]
-    
-    plt.scatter(time_plot, avg_tot_theta_plot, 
-                s=150, label='time step $k$: {}$s$'.format(DT[i]))
-    
-    
-plt.legend(fontsize=fs_-5)
-plt.savefig("dt_sweep/dt_sweep_figs/multi_theta.png")
-plt.show()
+    dt              = DT[i]
 
-# loop through all data and plot cPI
-plt.figure(figsize=(10, 7.5))
-plt.title(r'Average cPI', fontsize=fs_)
-plt.ylabel(r'cPI ($mol/m^3$)', fontsize=fs_-5)
-plt.xlabel('time ($s$)', fontsize=fs_-5)
+    avg_tot_theta_plot = avg_tot_theta[i]
+    err = np.linalg.norm(avg_tot_theta_plot - exact_temp)
+    print('temp err: ', err)
+    plt.scatter(dt, err, 
+                s=150, c='g', label='time step $k$: {}$s$'.format(dt))
+    
+plt.yscale('log')
+plt.xscale('log')
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
-for i in range(len(time)-bump):
-    time_plot       = time[i]
-    avg_tot_cPI_plot = avg_tot_cPI[i]
-    
-    plt.scatter(time_plot, np.array(avg_tot_cPI_plot), 
-                s=150, label='time step $k$: {}$s$'.format(DT[i]))
-    
 plt.legend(fontsize=fs_-5)
-plt.savefig("dt_sweep/dt_sweep_figs/multi_cPI.png")
+# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_theta.png")
+plt.show()
+
+# loop through all data and plot error for cPI
+plt.figure(figsize=(10, 7.5))
+plt.title(r'error: average cPI', fontsize=fs_)
+plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
+plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+plt.xticks(fontsize=fs_-5)
+plt.yticks(fontsize=fs_-5)
+
+# compute 'exact' cPI
+exact_cPI = np.array(avg_tot_cPI[exact])
+
+for i in range(len(time)-bump):
+    time_plot        = time[i]
+    avg_tot_cPI_plot = avg_tot_cPI[i]
+    dt               = DT[i]
+    err = np.linalg.norm(avg_tot_cPI_plot - exact_cPI)
+    print('cPI err: ', err)
+    plt.scatter(dt, err, 
+                s=150, c='g', label='time step $k$: {}$s$'.format(dt))
+
+
+plt.yscale('log')
+plt.xscale('log')
+plt.legend(fontsize=fs_-5)
+# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_cPI.png")
 plt.show()
 
 # loop through all data and plot cPIdot
 plt.figure(figsize=(10, 7.5))
-plt.title(r'Average cPIdot', fontsize=fs_)
-plt.ylabel(r'cPIdot ($mol/m^3/s$)', fontsize=fs_-5)
-plt.xlabel('time ($s$)', fontsize=fs_-5)
+plt.title(r'error: average cPIdot', fontsize=fs_)
+plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
+plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
+# compute 'exact' temperature
+exact_cPIdot = np.array(avg_tot_cPIdot[exact])
+
 for i in range(len(time)-bump):
-    time_plot       = time[i]
+    time_plot           = time[i]
     avg_tot_cPIdot_plot = avg_tot_cPIdot[i]
-    
-    plt.scatter(time_plot, np.array(avg_tot_cPIdot_plot), 
-                s=150, label='time step $k$: {}$s$'.format(DT[i]))
+    dt                  = DT[i]
+    err                 = np.linalg.norm(avg_tot_cPIdot_plot - exact_cPIdot)
+
+    print('cPIdot err: ', err)
+    plt.scatter(dt, err, 
+                s=150, c='g', label='time step $k$: {}$s$'.format(dt))
 
 plt.legend(fontsize=fs_-5)
-plt.savefig("dt_sweep/dt_sweep_figs/multi_cPIdot.png")
+plt.yscale('log')
+plt.xscale('log')
+# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_cPIdot.png")
 plt.show()
 
 # loop through all data and plot cMdot
 plt.figure(figsize=(10, 7.5))
-plt.title(r'Average cMdot', fontsize=fs_)
-plt.ylabel(r'cMdot ($mol/m^3/s$)', fontsize=fs_-5)
-plt.xlabel('time ($s$)', fontsize=fs_-5)
+plt.title(r'error: average cMdot', fontsize=fs_)
+plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
+plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
+
+# compute 'exact' temperature
+exact_cMdot = np.array(avg_tot_cMdot[exact])
 
 for i in range(len(time)-bump):
     time_plot       = time[i]
     avg_tot_cMdot_plot = avg_tot_cMdot[i]
-    
-    plt.scatter(time_plot, np.array(avg_tot_cMdot_plot), 
-                s=150, label='time step $k$: {}$s$'.format(DT[i]))
+    dt                  = DT[i]
+    err                 = np.linalg.norm(avg_tot_cMdot_plot - exact_cMdot)
+
+    print('cMdot err: ', err)
+    plt.scatter(dt, err, 
+                s=150, c='g', label='time step $k$: {}$s$'.format(dt))
     
 plt.legend(fontsize=fs_-5)
-plt.savefig("dt_sweep/dt_sweep_figs/multi_cMdot.png")
+plt.yscale('log')
+plt.xscale('log')
+# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_cMdot.png")
 plt.show()
 
 # loop through all data and plot k_t
 plt.figure(figsize=(10, 7.5))
-plt.title(r'Average k_t', fontsize=fs_)
-plt.ylabel(r'k_t ($m^3/mol/s$)', fontsize=fs_-5)
-plt.xlabel('time ($s$)', fontsize=fs_-5)
+plt.title(r'error: average $k_t$', fontsize=fs_)
+plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
+plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
-for i in range(len(time)-bump):
-    time_plot       = time[i]
-    avg_k_t_plot = avg_k_t[i]
-    
-    plt.scatter(time_plot, np.array(avg_k_t_plot), 
-                s=150, label='time step $k$: {}$s$'.format(DT[i]))
-    
-plt.legend(fontsize=fs_-5)
-plt.savefig("dt_sweep/dt_sweep_figs/multi_k_t.png")
-plt.show()
-
-# loop through all data and plot k_p
-plt.figure(figsize=(10, 7.5))
-plt.title(r'Average k_p', fontsize=fs_)
-plt.ylabel(r'k_p ($m^3/mol/s$)', fontsize=fs_-5)
-plt.xlabel('time ($s$)', fontsize=fs_-5)
-plt.xticks(fontsize=fs_-5)
-plt.yticks(fontsize=fs_-5)
-
-for i in range(len(time)-bump):
-    time_plot       = time[i]
-    avg_k_p_plot = avg_k_p[i]
-    
-    plt.scatter(time_plot, np.array(avg_k_p_plot), 
-                s=150, label='time step $k$: {}$s$'.format(DT[i]))
-
-plt.legend(fontsize=fs_-5)
-plt.savefig("dt_sweep/dt_sweep_figs/multi_k_p.png")
-plt.show()
-
-
-# %%

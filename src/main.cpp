@@ -35,32 +35,36 @@ int main() {
     const int num_sweeps          = 5;
     float I_UV[num_sweeps]        = {2, 6, 10, 50, 100};
     float temp_amb[num_sweeps]    = {298.15, 303.15, 315.15, 325.15, 335.15};
-    double dt_sweep[num_sweeps]   = {1e-5, 5e-5, 1e-4, 5e-4, 1e-3};
-    double node_sweep[num_sweeps] = {51, 41, 31, 21, 11};
+    double dt_sweep[num_sweeps]   = {1e-3, 5e-4, 1e-4, 5e-5, 1e-5};
+    // double node_sweep[num_sweeps] = {51, 41, 31, 21, 11};
 
 
     int   save_voxel = 0;  // 0: off | 1: on
     int   method     = 2;  // 0: forward euler | 1: backward euler | 2: trap
-    int   sim_count  = 1;
+    int   sim_count  = 4;
 
-    for (int i = 0; i < num_sweeps; i++){
+    for (int i = 0; i < 1; i++){
 
         std::cout << " --- --------- Simulation: " << i << "----------- ---" << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
 
         // SINGLE SIMULATION
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-4, NODE, sim_count);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-5, NODE, sim_count, temp_amb[1]);
 
         // UV SWEEP
         // Voxel VoxelSystem1(I_UV[i], TFINAL, DT, NODE, sim_count);
         
         // DT SWEEP
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[i], NODE, sim_count);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-3, NODE, sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-4, NODE, sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-4, NODE, sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-5, NODE, sim_count, temp_amb[1]);
+        Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-5, NODE, sim_count, temp_amb[1]);
         
         // TEMP SWEEP
-        Voxel VoxelSystem1(I_UV[2], TFINAL, DT, NODE, sim_count, temp_amb[i]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, DT, NODE, sim_count, temp_amb[i]);
 
-        VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
+        // VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
         VoxelSystem1.Density2File();
 
         VoxelSystem1.Simulate(method, save_voxel);

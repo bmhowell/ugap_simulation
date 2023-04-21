@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/c++ -O3 -DNDEBUG -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/usr/local/opt/libomp/lib CMakeFiles/ugapDiffusion.dir/main.cpp.o CMakeFiles/ugapDiffusion.dir/Voxel.cpp.o -o ugapDiffusion 
