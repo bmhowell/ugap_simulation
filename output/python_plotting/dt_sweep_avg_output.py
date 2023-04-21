@@ -79,7 +79,7 @@ for i in range(len(time)-bump):
 plt.legend(fontsize=fs_-5)
 plt.yscale('log')
 plt.xscale('log')
-# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_conversion.png")
+plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_conversion.png")
 plt.show()
 
 # compute 'exact' temperature
@@ -107,7 +107,7 @@ plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
 plt.legend(fontsize=fs_-5)
-# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_theta.png")
+plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_theta.png")
 plt.show()
 
 # loop through all data and plot error for cPI
@@ -134,7 +134,7 @@ for i in range(len(time)-bump):
 plt.yscale('log')
 plt.xscale('log')
 plt.legend(fontsize=fs_-5)
-# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_cPI.png")
+plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cPI.png")
 plt.show()
 
 # loop through all data and plot cPIdot
@@ -161,7 +161,7 @@ for i in range(len(time)-bump):
 plt.legend(fontsize=fs_-5)
 plt.yscale('log')
 plt.xscale('log')
-# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_cPIdot.png")
+plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cPIdot.png")
 plt.show()
 
 # loop through all data and plot cMdot
@@ -188,14 +188,10 @@ for i in range(len(time)-bump):
 plt.legend(fontsize=fs_-5)
 plt.yscale('log')
 plt.xscale('log')
-# plt.savefig("dt_21node_sweep/dt_sweep_figs/multi_cMdot.png")
+plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cMdot.png")
 plt.show()
 
-# loop through all data and plot k_t
-plt.figure(figsize=(10, 7.5))
-plt.title(r'error: average $k_t$', fontsize=fs_)
-plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
-plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
-plt.xticks(fontsize=fs_-5)
-plt.yticks(fontsize=fs_-5)
 
+
+
+# %%
