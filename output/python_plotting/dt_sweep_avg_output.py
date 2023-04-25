@@ -15,7 +15,7 @@ skip = 10
 # dir_path = '/home/brian/Documents/berkeley/ugap_simulation/output/python_plotting/'
 
 # macbook computing
-dir_path = '/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/python_plotting'
+dir_path = '/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/python_plotting/dt_21node_sweep'
 
 time            = []
 avg_tot_cPI     = []
@@ -51,12 +51,15 @@ for filename in csv_files_sorted:
 
     counter += 1
 
+#%%
 # loop through all data and plot conversion
 fs_ = 25
 bump = 1
-exact = -1
+exact_21 = 4
+exact_51 = -1
 
-DT = [0.001, 0.0005, 0.0001, 5e-05, 1e-05]
+DT = [0.001, 0.0005, 0.0001, 5e-05, 1e-05, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6]
+len_data = len(time[-1])
 
 plt.figure(figsize=(10, 7.5)) 
 plt.title(r'error: conversion of M', fontsize=fs_)
@@ -66,24 +69,54 @@ plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
 # compute 'exact' converion
-exact_conv = (1 - np.array(avg_tot_cM[exact]) / avg_tot_cM[exact][0])
+plot_err_51 = []
+plot_dt_51  = []
+plot_err_21 = []
+plot_dt_21  = []
+
 for i in range(len(time)-bump):
-    time_plot       = time[i]
-    dt              = DT[i]
-    avg_tot_cM_plot = avg_tot_cM[i]
-    conv = (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0])
-    err  = np.linalg.norm(conv - exact_conv)
-    print('error: ', err)
-    plt.scatter(dt, err, s=150, c='g', label='time step $k$: {}$s$'.format(dt))
+
+    if i > 4: 
+        color = 'r'
+        label = 'nodes = 51'
+        avg_tot_cM_plot = avg_tot_cM[i]
+
+        exact_conv = (1 - np.array(avg_tot_cM[exact_51]) / avg_tot_cM[exact_51][0])
+
+        conv = (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0])
+        err  = np.linalg.norm(conv[2:len_data] - exact_conv[2:len_data])
+        print('error 51: ', err)
+        plot_err_51.append(err)
+        plot_dt_51.append(DT[i])
+
+    else:
+        color = 'g'
+        label = 'nodes = 21'
+        avg_tot_cM_plot = avg_tot_cM[i]
+
+        exact_conv = (1 - np.array(avg_tot_cM[exact_21]) / avg_tot_cM[exact_21][0])
+
+        conv = (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0])
+        err  = np.linalg.norm(conv[2:len_data] - exact_conv[2:len_data])
+        print('error 21: ', err)
+        plot_dt_21.append(DT[i])
+        plot_err_21.append(err)
+
+plt.scatter(plot_dt_21, plot_err_21, s=150, label='nodes 21')
+plt.scatter(plot_dt_51, plot_err_51, s=150, label='nodes 51')
     
-plt.legend(fontsize=fs_-5)
+plt.legend(fontsize=10)
 plt.yscale('log')
 plt.xscale('log')
-plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_conversion.png")
+# plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_conversion.png")
 plt.show()
 
-# compute 'exact' temperature
-exact_temp = np.array(avg_tot_theta[exact])
+#%%
+
+plot_err_51 = []
+plot_dt_51  = []
+plot_err_21 = []
+plot_dt_21  = []
 
 # loop through all data and plot theta
 plt.figure(figsize=(10, 7.5)) 
@@ -92,15 +125,39 @@ plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
 plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
 
 for i in range(len(time) - bump):
-    time_plot       = time[i]
-    dt              = DT[i]
-
-    avg_tot_theta_plot = avg_tot_theta[i]
-    err = np.linalg.norm(avg_tot_theta_plot - exact_temp)
-    print('temp err: ', err)
-    plt.scatter(dt, err, 
-                s=150, c='g', label='time step $k$: {}$s$'.format(dt))
     
+
+    if i > 4: 
+        color = 'r'
+        label = 'nodes = 51'
+        avg_tot_theta_plot = avg_tot_theta[i]
+
+        # compute 'exact' temperature
+        exact_temp = np.array(avg_tot_theta[exact_51])
+        print('exact_temp: ', exact_temp)
+        print('avg_tot_theta_plot: ', avg_tot_theta_plot)
+        err  = np.linalg.norm(avg_tot_theta_plot[2:len_data] - exact_temp[2:len_data])
+        print('error 51: ', err)
+        plot_err_51.append(err)
+        plot_dt_51.append(DT[i])
+
+    else:
+        color = 'g'
+        label = 'nodes = 21'
+        avg_tot_theta_plot = avg_tot_theta[i]
+
+        exact_temp = np.array(avg_tot_theta[exact_21])
+
+        err  = np.linalg.norm(avg_tot_theta_plot[2:len_data] - exact_temp[2:len_data])
+        print('error 21: ', err)
+        plot_dt_21.append(DT[i])
+        plot_err_21.append(err)
+    
+
+
+plt.scatter(plot_dt_21, plot_err_21, s=150, label='nodes 21')
+plt.scatter(plot_dt_51, plot_err_51, s=150, label='nodes 51')
+
 plt.yscale('log')
 plt.xscale('log')
 plt.xticks(fontsize=fs_-5)
@@ -110,6 +167,7 @@ plt.legend(fontsize=fs_-5)
 plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_theta.png")
 plt.show()
 
+#%%
 # loop through all data and plot error for cPI
 plt.figure(figsize=(10, 7.5))
 plt.title(r'error: average cPI', fontsize=fs_)
@@ -118,18 +176,47 @@ plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
+plot_err_51 = []
+plot_dt_51  = []
+plot_err_21 = []
+plot_dt_21  = []
+
 # compute 'exact' cPI
-exact_cPI = np.array(avg_tot_cPI[exact])
 
 for i in range(len(time)-bump):
-    time_plot        = time[i]
-    avg_tot_cPI_plot = avg_tot_cPI[i]
-    dt               = DT[i]
-    err = np.linalg.norm(avg_tot_cPI_plot - exact_cPI)
-    print('cPI err: ', err)
-    plt.scatter(dt, err, 
-                s=150, c='g', label='time step $k$: {}$s$'.format(dt))
 
+    if i > 4: 
+        color = 'r'
+        label = 'nodes = 51'
+        avg_tot_cPI_plot = avg_tot_cPI[i]
+        # compute 'exact' cPI
+        exact_cPI = np.array(avg_tot_cPI[exact_51])
+
+        print('exact_cPI: ', exact_cPI)
+        print('avg_tot_cPI_plot: ', avg_tot_cPI_plot)
+        # compute error
+        err = np.linalg.norm(avg_tot_cPI_plot[2:len_data] - exact_cPI[2:len_data])
+
+        print('error 51: ', err)
+        plot_err_51.append(err)
+        plot_dt_51.append(DT[i])
+
+    else:
+        color = 'g'
+        label = 'nodes = 21'
+        avg_tot_cPI_plot = avg_tot_cPI[i]
+
+        # compute 'exact' cPI
+        exact_cPI = np.array(avg_tot_cPI[exact_21])
+
+        # compute error
+        err = np.linalg.norm(avg_tot_cPI_plot[:len(exact_cPI)] - exact_cPI)
+        print('error 21: ', err)
+        plot_dt_21.append(DT[i])
+        plot_err_21.append(err)
+    
+plt.scatter(plot_dt_21, plot_err_21, s=150, label='nodes 21')
+# plt.scatter(plot_dt_51, plot_err_51, s=150, label='nodes 51')
 
 plt.yscale('log')
 plt.xscale('log')
@@ -137,61 +224,63 @@ plt.legend(fontsize=fs_-5)
 plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cPI.png")
 plt.show()
 
-# loop through all data and plot cPIdot
-plt.figure(figsize=(10, 7.5))
-plt.title(r'error: average cPIdot', fontsize=fs_)
-plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
-plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
-plt.xticks(fontsize=fs_-5)
-plt.yticks(fontsize=fs_-5)
+# # loop through all data and plot cPIdot
+# plt.figure(figsize=(10, 7.5))
+# plt.title(r'error: average cPIdot', fontsize=fs_)
+# plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
+# plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+# plt.xticks(fontsize=fs_-5)
+# plt.yticks(fontsize=fs_-5)
 
-# compute 'exact' temperature
-exact_cPIdot = np.array(avg_tot_cPIdot[exact])
+# # compute 'exact' temperature
+# exact_cPIdot = np.array(avg_tot_cPIdot[exact])
 
-for i in range(len(time)-bump):
-    time_plot           = time[i]
-    avg_tot_cPIdot_plot = avg_tot_cPIdot[i]
-    dt                  = DT[i]
-    err                 = np.linalg.norm(avg_tot_cPIdot_plot - exact_cPIdot)
+# for i in range(len(time)-bump):
+#     time_plot           = time[i]
+#     avg_tot_cPIdot_plot = avg_tot_cPIdot[i]
+#     dt                  = DT[i]
+#     err                 = np.linalg.norm(avg_tot_cPIdot_plot - exact_cPIdot)
 
-    print('cPIdot err: ', err)
-    plt.scatter(dt, err, 
-                s=150, c='g', label='time step $k$: {}$s$'.format(dt))
+#     print('cPIdot err: ', err)
+#     plt.scatter(dt, err, 
+#                 s=150, c='g', label='time step $k$: {}$s$'.format(dt))
 
-plt.legend(fontsize=fs_-5)
-plt.yscale('log')
-plt.xscale('log')
-plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cPIdot.png")
-plt.show()
+# plt.legend(fontsize=fs_-5)
+# plt.yscale('log')
+# plt.xscale('log')
+# # plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cPIdot.png")
+# plt.show()
 
-# loop through all data and plot cMdot
-plt.figure(figsize=(10, 7.5))
-plt.title(r'error: average cMdot', fontsize=fs_)
-plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
-plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
-plt.xticks(fontsize=fs_-5)
-plt.yticks(fontsize=fs_-5)
+# # loop through all data and plot cMdot
+# plt.figure(figsize=(10, 7.5))
+# plt.title(r'error: average cMdot', fontsize=fs_)
+# plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
+# plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+# plt.xticks(fontsize=fs_-5)
+# plt.yticks(fontsize=fs_-5)
 
-# compute 'exact' temperature
-exact_cMdot = np.array(avg_tot_cMdot[exact])
+# # compute 'exact' temperature
+# exact_cMdot = np.array(avg_tot_cMdot[exact])
 
-for i in range(len(time)-bump):
-    time_plot       = time[i]
-    avg_tot_cMdot_plot = avg_tot_cMdot[i]
-    dt                  = DT[i]
-    err                 = np.linalg.norm(avg_tot_cMdot_plot - exact_cMdot)
+# for i in range(len(time)-bump):
+#     time_plot       = time[i]
+#     avg_tot_cMdot_plot = avg_tot_cMdot[i]
+#     dt                  = DT[i]
+#     err                 = np.linalg.norm(avg_tot_cMdot_plot - exact_cMdot)
 
-    print('cMdot err: ', err)
-    plt.scatter(dt, err, 
-                s=150, c='g', label='time step $k$: {}$s$'.format(dt))
+#     print('cMdot err: ', err)
+#     plt.scatter(dt, err, 
+#                 s=150, c='g', label='time step $k$: {}$s$'.format(dt))
     
-plt.legend(fontsize=fs_-5)
-plt.yscale('log')
-plt.xscale('log')
-plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cMdot.png")
-plt.show()
+# plt.legend(fontsize=fs_-5)
+# plt.yscale('log')
+# plt.xscale('log')
+# plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cMdot.png")
+# plt.show()
 
 
 
+
+# # %%
 
 # %%

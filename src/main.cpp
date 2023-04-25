@@ -41,7 +41,7 @@ int main() {
 
     int   save_voxel = 0;  // 0: off | 1: on
     int   method     = 2;  // 0: forward euler | 1: backward euler | 2: trap
-    int   sim_count  = 4;
+    int   sim_count  = 5;
 
     for (int i = 0; i < 1; i++){
 
@@ -59,7 +59,8 @@ int main() {
         // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-4, NODE, sim_count, temp_amb[1]);
         // Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-4, NODE, sim_count, temp_amb[1]);
         // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-5, NODE, sim_count, temp_amb[1]);
-        Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-5, NODE, sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-5, NODE, sim_count, temp_amb[1]);
+        Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-6, NODE, sim_count, temp_amb[1]);
         
         // TEMP SWEEP
         // Voxel VoxelSystem1(I_UV[2], TFINAL, DT, NODE, sim_count, temp_amb[i]);
