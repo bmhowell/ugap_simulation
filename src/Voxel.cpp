@@ -1863,18 +1863,18 @@ void Voxel::Simulate(int method, int save_voxel){
 
     std::vector<double> total_time(N_TIME_STEPS, 0);
 
-    std::cout << "=================================="               << std::endl;
-    std::cout << "Simulation parameters"                            << std::endl;
-    std::cout << "Total time: "           << t_final                << std::endl;
-    std::cout << "Number of time steps: " << N_TIME_STEPS           << std::endl;
-    std::cout << "Print iteration: "      << print_iter             << std::endl;
-    std::cout << "=================================="               << std::endl;
-    std::cout << "Numerical parameters"                             << std::endl;
-    std::cout << "h: "   << h                                       << std::endl;
-    std::cout << "dt: "  << dt                                      << std::endl;
-    std::cout << "Diffusion CFL: "   << Dm0 * dt / h / h            << std::endl;
-    std::cout << "Thermal CFL: "     << dt / h / rho_UGAP / Cp_nacl << std::endl;
-    std::cout << "\n=================================="             << std::endl;
+    std::cout << "=================================="                                     << std::endl;
+    std::cout << "Simulation parameters"                                                  << std::endl;
+    std::cout << "Total time: "           << t_final                                      << std::endl;
+    std::cout << "Number of time steps: " << N_TIME_STEPS                                 << std::endl;
+    std::cout << "Print iteration: "      << print_iter                                   << std::endl;
+    std::cout << "=================================="                                     << std::endl;
+    std::cout << "Numerical parameters"                                                   << std::endl;
+    std::cout << "h: "   << h                                                             << std::endl;
+    std::cout << "dt: "  << dt                                                            << std::endl;
+    std::cout << "Diffusion CFL: "   << Dm0 * dt / h / h                                  << std::endl;
+    std::cout << "Thermal CFL: "     << dt * K_thermal_shanna/ h / h / rho_UGAP / Cp_nacl << std::endl;
+    std::cout << "\n=================================="                                   << std::endl;
 
     Config2File(dt); 
 

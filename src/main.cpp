@@ -35,13 +35,14 @@ int main() {
     const int num_sweeps          = 5;
     float I_UV[num_sweeps]        = {2, 6, 10, 50, 100};
     float temp_amb[num_sweeps]    = {298.15, 303.15, 315.15, 325.15, 335.15};
-    double dt_sweep[num_sweeps]   = {1e-3, 5e-4, 1e-4, 5e-5, 1e-5};
-    // double node_sweep[num_sweeps] = {51, 41, 31, 21, 11};
+
+    double dt_sweep[num_sweeps]   = {4.5e-3, 1e-3, 5e-4, 1e-4, 5e-5};
+    double node_sweep[num_sweeps] = {11, 21, 31, 41, 51};
 
 
     int   save_voxel = 0;  // 0: off | 1: on
     int   method     = 2;  // 0: forward euler | 1: backward euler | 2: trap
-    int   sim_count  = 5;
+    int   sim_count  = 3;
 
     for (int i = 0; i < 1; i++){
 
@@ -54,14 +55,13 @@ int main() {
         // UV SWEEP
         // Voxel VoxelSystem1(I_UV[i], TFINAL, DT, NODE, sim_count);
         
-        // DT SWEEP
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-3, NODE, sim_count, temp_amb[1]);
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-4, NODE, sim_count, temp_amb[1]);
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-4, NODE, sim_count, temp_amb[1]);
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-5, NODE, sim_count, temp_amb[1]);
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, 1e-5, NODE, sim_count, temp_amb[1]);
-        Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-6, NODE, sim_count, temp_amb[1]);
-        
+        // CONVERGENCE SWEEP
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[0], node_sweep[0], sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[1], node_sweep[1], sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[2], node_sweep[2], sim_count, temp_amb[1]);
+        Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[3], node_sweep[3], sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[4], node_sweep[4], sim_count, temp_amb[1]);
+
         // TEMP SWEEP
         // Voxel VoxelSystem1(I_UV[2], TFINAL, DT, NODE, sim_count, temp_amb[i]);
 

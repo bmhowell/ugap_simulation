@@ -55,10 +55,10 @@ for filename in csv_files_sorted:
 # loop through all data and plot conversion
 fs_ = 25
 bump = 1
-exact_21 = 4
+exact_21 = -1
 exact_51 = -1
 
-DT = [0.001, 0.0005, 0.0001, 5e-05, 1e-05, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6]
+DT = [0.001, 0.0005, 0.0001, 5e-05, 1e-05, 1e-4]
 len_data = len(time[-1])
 
 plt.figure(figsize=(10, 7.5)) 
@@ -75,32 +75,17 @@ plot_err_21 = []
 plot_dt_21  = []
 
 for i in range(len(time)-bump):
+    color = 'g'
+    label = 'nodes = 21'
+    avg_tot_cM_plot = avg_tot_cM[i]
 
-    if i > 4: 
-        color = 'r'
-        label = 'nodes = 51'
-        avg_tot_cM_plot = avg_tot_cM[i]
+    exact_conv = (1 - np.array(avg_tot_cM[exact_21]) / avg_tot_cM[exact_21][0])
 
-        exact_conv = (1 - np.array(avg_tot_cM[exact_51]) / avg_tot_cM[exact_51][0])
-
-        conv = (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0])
-        err  = np.linalg.norm(conv[2:len_data] - exact_conv[2:len_data])
-        print('error 51: ', err)
-        plot_err_51.append(err)
-        plot_dt_51.append(DT[i])
-
-    else:
-        color = 'g'
-        label = 'nodes = 21'
-        avg_tot_cM_plot = avg_tot_cM[i]
-
-        exact_conv = (1 - np.array(avg_tot_cM[exact_21]) / avg_tot_cM[exact_21][0])
-
-        conv = (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0])
-        err  = np.linalg.norm(conv[2:len_data] - exact_conv[2:len_data])
-        print('error 21: ', err)
-        plot_dt_21.append(DT[i])
-        plot_err_21.append(err)
+    conv = (1 - np.array(avg_tot_cM_plot) / avg_tot_cM_plot[0])
+    err  = np.linalg.norm(conv[2:len_data] - exact_conv[2:len_data])
+    print('error 21: ', err)
+    plot_dt_21.append(DT[i])
+    plot_err_21.append(err)
 
 plt.scatter(plot_dt_21, plot_err_21, s=150, label='nodes 21')
 plt.scatter(plot_dt_51, plot_err_51, s=150, label='nodes 51')
@@ -125,33 +110,18 @@ plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
 plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
 
 for i in range(len(time) - bump):
-    
 
-    if i > 4: 
-        color = 'r'
-        label = 'nodes = 51'
-        avg_tot_theta_plot = avg_tot_theta[i]
+    color = 'g'
+    label = 'nodes = 21'
+    avg_tot_theta_plot = avg_tot_theta[i]
 
-        # compute 'exact' temperature
-        exact_temp = np.array(avg_tot_theta[exact_51])
-        print('exact_temp: ', exact_temp)
-        print('avg_tot_theta_plot: ', avg_tot_theta_plot)
-        err  = np.linalg.norm(avg_tot_theta_plot[2:len_data] - exact_temp[2:len_data])
-        print('error 51: ', err)
-        plot_err_51.append(err)
-        plot_dt_51.append(DT[i])
+    exact_temp = np.array(avg_tot_theta[exact_21])
 
-    else:
-        color = 'g'
-        label = 'nodes = 21'
-        avg_tot_theta_plot = avg_tot_theta[i]
-
-        exact_temp = np.array(avg_tot_theta[exact_21])
-
-        err  = np.linalg.norm(avg_tot_theta_plot[2:len_data] - exact_temp[2:len_data])
-        print('error 21: ', err)
-        plot_dt_21.append(DT[i])
-        plot_err_21.append(err)
+    # err  = np.linalg.norm(avg_tot_theta_plot[2:len_data] - exact_temp[2:len_data])
+    err = np.linalg.norm(avg_tot_theta_plot - exact_temp))
+    print('error 21: ', err)
+    plot_dt_21.append(DT[i])
+    plot_err_21.append(err)
     
 
 
@@ -184,36 +154,20 @@ plot_dt_21  = []
 # compute 'exact' cPI
 
 for i in range(len(time)-bump):
+    
+    color = 'g'
+    label = 'nodes = 21'
+    avg_tot_cPI_plot = avg_tot_cPI[i]
 
-    if i > 4: 
-        color = 'r'
-        label = 'nodes = 51'
-        avg_tot_cPI_plot = avg_tot_cPI[i]
-        # compute 'exact' cPI
-        exact_cPI = np.array(avg_tot_cPI[exact_51])
+    # compute 'exact' cPI
+    exact_cPI = np.array(avg_tot_cPI[exact_21])
 
-        print('exact_cPI: ', exact_cPI)
-        print('avg_tot_cPI_plot: ', avg_tot_cPI_plot)
-        # compute error
-        err = np.linalg.norm(avg_tot_cPI_plot[2:len_data] - exact_cPI[2:len_data])
-
-        print('error 51: ', err)
-        plot_err_51.append(err)
-        plot_dt_51.append(DT[i])
-
-    else:
-        color = 'g'
-        label = 'nodes = 21'
-        avg_tot_cPI_plot = avg_tot_cPI[i]
-
-        # compute 'exact' cPI
-        exact_cPI = np.array(avg_tot_cPI[exact_21])
-
-        # compute error
-        err = np.linalg.norm(avg_tot_cPI_plot[:len(exact_cPI)] - exact_cPI)
-        print('error 21: ', err)
-        plot_dt_21.append(DT[i])
-        plot_err_21.append(err)
+    # compute error
+    # err = np.linalg.norm(avg_tot_cPI_plot[:len(exact_cPI)] - exact_cPI)
+    err = np.linalg.norm(avg_tot_cPI_plot - exact_cPI)
+    print('error 21: ', err)
+    plot_dt_21.append(DT[i])
+    plot_err_21.append(err)
     
 plt.scatter(plot_dt_21, plot_err_21, s=150, label='nodes 21')
 # plt.scatter(plot_dt_51, plot_err_51, s=150, label='nodes 51')
