@@ -1930,12 +1930,13 @@ void Voxel::Simulate(int method, int save_voxel){
         // display time
         timer += dt;
         if ((t + 1) % 100 == 0){
-            std::cout << "iteration: " << t + 1 << " / " << N_TIME_STEPS + 1 << std::endl;
+            std::cout << "time: " << timer << " / " << t_final << std::endl;
+            std::cout << "iteration: " << t + 1 << " / " << N_TIME_STEPS + 1 << std::endl << std::endl;
         }
 
         // store solution results (every 100 steps) including last time step
-        if (t % print_iter == 0 || t == N_TIME_STEPS-1){
 
+        if (std::abs(std::floor(timer * 2) / 2 - timer) <= 1e-5){    
             if (save_voxel == 1){
                 Concentrations2File(0,
                                     c_PI,

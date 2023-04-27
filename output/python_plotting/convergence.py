@@ -76,7 +76,7 @@ exact_cM    = np.array(avg_tot_cM[exact])
 for i in range(len(time)-bump):
     avg_tot_cM_plot = avg_tot_cM[i]
 
-    err  = np.linalg.norm(avg_tot_cM_plot - exact_cM)
+    err  = np.linalg.norm(avg_tot_cM_plot[:60] - exact_cM[:60])
     print('error: ', err)
     plot_dx.append(DX[i])
     plot_err.append(err)
@@ -109,9 +109,9 @@ for i in range(len(time) - bump):
     avg_tot_theta_plot = avg_tot_theta[i]
 
     
-    err  = np.linalg.norm(avg_tot_theta_plot - exact_temp)
+    err  = np.linalg.norm(avg_tot_theta_plot[:60] - exact_temp[:60])
     print('error: ', err)
-    plot_dx.append(DT[i])
+    plot_dx.append(DX[i])
     plot_err.append(err)
     
 
@@ -152,8 +152,8 @@ for i in range(len(time)-bump):
     exact_cPI = np.array(avg_tot_cPI[exact])
 
     # compute error
-    err = np.linalg.norm(avg_tot_cPI_plot - exact_cPI)
-    print('error 21: ', err)
+    err = np.linalg.norm(avg_tot_cPI_plot[:60] - exact_cPI[:60])
+    print('error {}: '.format(NODES[i]), err)
     plot_dx.append(DT[i])
     plot_err.append(err)
     
@@ -186,8 +186,8 @@ for i in range(len(time)-bump):
     label = 'nodes = 21'
 
     # compute error
-    err = np.linalg.norm(avg_tot_cPIdot[i] - exact_cPIdot)
-    print('error 21: ', err)
+    err = np.linalg.norm(avg_tot_cPIdot[i][:60] - exact_cPIdot[:60])
+    print('error {}: '.format(NODES[i]), err)
     plot_dx.append(DX[i])
     plot_err.append(err)
 
@@ -219,8 +219,8 @@ for i in range(len(time)-bump):
     label = 'nodes = 21'
 
     # compute error
-    err = np.linalg.norm(avg_tot_cMdot[i] - exact_cMdot)
-    print('error 21: ', err)
+    err = np.linalg.norm(avg_tot_cMdot[i][:60] - exact_cMdot[:60])
+    print('error {}: '.format(NODES[i]), err)
     plot_dx.append(DX[i])
     plot_err.append(err)
 

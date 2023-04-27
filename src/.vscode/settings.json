@@ -68,6 +68,9 @@
         "numeric": "cpp",
         "random": "cpp",
         "utility": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "sstream": "cpp",
+        "stack": "cpp",
+        "__nullptr": "cpp"
     }
 }
