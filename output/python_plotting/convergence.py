@@ -9,7 +9,7 @@ import matplotlib.cm as cm
 import os
 from matplotlib.ticker import ScalarFormatter
 
-skip = 10
+skip = 1
 
 # central comuting 
 # dir_path = '/home/brian/Documents/berkeley/ugap_simulation/output/python_plotting/'
@@ -57,8 +57,8 @@ fs_   = 25
 bump  = 1
 exact = -1
 
-DT    = [5e-3, 2.5e-3, 1e-3, 5e-4, 1e-4, 5e-5] 
-NODES = [11,   15,     21,   31,   41,   51]
+DT    = [3e-3, 1e-3,   7.5e-4, 5.5e-4, 3.5e-4, 2e-4, 1e-5] 
+NODES = [11,   15,     21,     25,     31,     41,     51]
 DX    = [0.00084 / (node - 1) for node in NODES]
 
 

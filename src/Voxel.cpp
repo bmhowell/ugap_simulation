@@ -1865,6 +1865,7 @@ void Voxel::Simulate(int method, int save_voxel){
 
     std::cout << "=================================="                                     << std::endl;
     std::cout << "Simulation parameters"                                                  << std::endl;
+    std::cout << "sim_id: "               << sim_id                                       << std::endl;
     std::cout << "Total time: "           << t_final                                      << std::endl;
     std::cout << "Number of time steps: " << N_TIME_STEPS                                 << std::endl;
     std::cout << "Print iteration: "      << print_iter                                   << std::endl;
@@ -1936,7 +1937,7 @@ void Voxel::Simulate(int method, int save_voxel){
 
         // store solution results (every 100 steps) including last time step
 
-        if (std::abs(std::floor(timer * 2) / 2 - timer) <= 1e-5){    
+        if (std::abs(std::floor(timer * 2) / 2 - timer) < dt || t == N_TIME_STEPS - 1){    
             if (save_voxel == 1){
                 Concentrations2File(0,
                                     c_PI,
