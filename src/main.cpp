@@ -35,7 +35,6 @@ int main() {
     const int num_sweeps          = 7;
     float I_UV[num_sweeps]        = {2, 6, 10, 50, 100};
     float temp_amb[num_sweeps]    = {298.15, 303.15, 315.15, 325.15, 335.15};
-    //0.0042336000000000006, 0.00216, 0.0010584000000000001, 0.0007350000000000002, 0.00047039999999999994, 0.00026460000000000003, 0.000169344
     //0.0032666666666666673, 0.0016666666666666666, 0.0008166666666666668, 0.0005671296296296297, 0.00036296296296296294, 0.0002041666666666667, 0.00013066666666666668
     // double dt_sweep[num_sweeps]   = {3e-3, 1.5e-3,   8e-4, 5.5e-4, 3.5e-4, 2e-4, 1.2e-5};
     double dt_sweep[num_sweeps]   = {3e-3, 1e-3,   7.5e-4, 5.5e-4, 3.5e-4, 2e-4, 1e-5};
@@ -46,24 +45,24 @@ int main() {
     int   method     = 2;  // 0: forward euler | 1: backward euler | 2: trap
     int   sim_count  = 2;
 
-    for (int i = 0; i < 1; i++){
+    for (int i = 0; i < num_sweeps; i++){
 
         std::cout << " --- --------- Simulation: " << i << "----------- ---" << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
 
         // SINGLE SIMULATION
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, 5e-5, NODE, sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[sim_count], node_sweep[sim_count], sim_count, temp_amb[1]);
 
         // UV SWEEP
-        // Voxel VoxelSystem1(I_UV[i], TFINAL, DT, NODE, sim_count);
+        // Voxel VoxelSystem1(I_UV[i], TFINAL, dt_sweep[2], node_sweep[2], i, temp_amb[1]);
         
         // CONVERGENCE SWEEP
-        Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[sim_count], node_sweep[sim_count], sim_count, temp_amb[1]);
+        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[sim_count], node_sweep[sim_count], sim_count, temp_amb[1]);
 
         // TEMP SWEEP
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, DT, NODE, sim_count, temp_amb[i]);
+        Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[2], node_sweep[2], i, temp_amb[i]);
 
-        // VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
+        VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
         VoxelSystem1.Density2File();
 
         VoxelSystem1.Simulate(method, save_voxel);

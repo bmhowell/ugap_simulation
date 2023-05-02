@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib.cm as cm
 import os
 from matplotlib.ticker import ScalarFormatter
+from scipy.stats import linregress
 
 skip = 1
 
@@ -63,7 +64,6 @@ DX    = [0.00084 / (node - 1) for node in NODES]
 
 
 plt.figure(figsize=(10, 7.5)) 
-# plt.title(r'convergence: conversion of M', fontsize=fs_)
 plt.title(r'convergence: cM', fontsize=fs_)
 plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
 plt.xlabel('mesh size $dx$ ($m$)', fontsize=fs_-5)
@@ -81,14 +81,16 @@ for i in range(len(time)-bump):
     plot_dx.append(DX[i])
     plot_err.append(err)
 
-plt.scatter(np.array(plot_dx), plot_err, s=150, label='nodes 21')
-   
-plt.legend(fontsize=10)
+slope, intercept, r_value, p_value, std_err = linregress(np.log(plot_dx), np.log(plot_err))
+print("Slope:", slope)
+plt.scatter(plot_dx, plot_err, s=150, label='slope = {}'.format(round(slope, 2)))
+
+plt.legend(fontsize=fs_-5)
 plt.yscale('log')
 plt.xscale('log')
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
-# plt.savefig("convergence/converge_conversion.png")
+plt.savefig("convergence/converge_conversion.png")
 plt.show()
 
 # %%
@@ -100,7 +102,8 @@ plot_dx  = []
 plt.figure(figsize=(10, 7.5)) 
 plt.title(r'error: average temperature', fontsize=fs_)
 plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
-plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+#plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+plt.xlabel('mesh size $dx$ ($m$)', fontsize=fs_-5)
 exact_temp = np.array(avg_tot_theta[exact])
 for i in range(len(time) - bump):
 
@@ -114,9 +117,9 @@ for i in range(len(time) - bump):
     plot_dx.append(DX[i])
     plot_err.append(err)
     
-
-
-plt.scatter(plot_dx, plot_err, s=150, label='nodes 21')
+slope, intercept, r_value, p_value, std_err = linregress(np.log(plot_dx), np.log(plot_err))
+print("Slope:", slope)
+plt.scatter(plot_dx, plot_err, s=150, label='slope = {}'.format(round(slope, 2)))
 
 
 plt.yscale('log')
@@ -125,7 +128,7 @@ plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
 plt.legend(fontsize=fs_-5)
-plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_theta.png")
+plt.savefig("convergence/converge_theta.png")
 plt.show()
 
 # %%
@@ -133,7 +136,8 @@ plt.show()
 plt.figure(figsize=(10, 7.5))
 plt.title(r'error: average cPI', fontsize=fs_)
 plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
-plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+#plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+plt.xlabel('mesh size $dx$ ($m$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
@@ -157,12 +161,14 @@ for i in range(len(time)-bump):
     plot_dx.append(DT[i])
     plot_err.append(err)
     
-plt.scatter(plot_dx, plot_err, s=150, label='nodes 21')
+slope, intercept, r_value, p_value, std_err = linregress(np.log(plot_dx), np.log(plot_err))
+print("Slope:", slope)
+plt.scatter(plot_dx, plot_err, s=150, label='slope = {}'.format(round(slope, 2)))
 
 plt.yscale('log')
 plt.xscale('log')
 plt.legend(fontsize=fs_-5)
-plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cPI.png")
+plt.savefig("convergence/converge_cPI.png")
 plt.show()
 
 # %%
@@ -171,7 +177,8 @@ plt.show()
 plt.figure(figsize=(10, 7.5))
 plt.title(r'error: average cPIdot', fontsize=fs_)
 plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
-plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+#plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+plt.xlabel('mesh size $dx$ ($m$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
@@ -191,12 +198,14 @@ for i in range(len(time)-bump):
     plot_dx.append(DX[i])
     plot_err.append(err)
 
-plt.scatter(plot_dx, plot_err, s=150, label='nodes 21')
+slope, intercept, r_value, p_value, std_err = linregress(np.log(plot_dx), np.log(plot_err))
+print("Slope:", slope)
+plt.scatter(plot_dx, plot_err, s=150, label='slope = {}'.format(round(slope, 2)))
 
 plt.legend(fontsize=fs_-5)
 plt.yscale('log')
 plt.xscale('log')
-# plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cPIdot.png")
+plt.savefig("convergence/converge_cPIdot.png")
 plt.show()
 
 # %%
@@ -204,7 +213,8 @@ plt.show()
 plt.figure(figsize=(10, 7.5))
 plt.title(r'error: average cMdot', fontsize=fs_)
 plt.ylabel(r'$L_2$ norm error', fontsize=fs_-5)
-plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+#plt.xlabel('time step $k$ ($s$)', fontsize=fs_-5)
+plt.xlabel('mesh size $dx$ ($m$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
 
@@ -224,11 +234,13 @@ for i in range(len(time)-bump):
     plot_dx.append(DX[i])
     plot_err.append(err)
 
-plt.scatter(plot_dx, plot_err, s=150, label='nodes 21')
+slope, intercept, r_value, p_value, std_err = linregress(np.log(plot_dx), np.log(plot_err))
+print("Slope:", slope)
+plt.scatter(plot_dx, plot_err, s=150, label='slope = {}'.format(round(slope, 2)))
 
 plt.legend(fontsize=fs_-5)
 plt.yscale('log')
 plt.xscale('log')
-plt.savefig("dt_21node_sweep/dt_sweep_figs/converge_cMdot.png")
+plt.savefig("convergence/converge_cMdot.png")
 plt.show()
 # %%

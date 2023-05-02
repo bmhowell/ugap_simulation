@@ -74,30 +74,36 @@ Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_i
     c_NaCl = 37241.4;                                           // | mol/m^3 | concentration of NaCl
 
     // diffusion properties
-    Dm0 = 1.08e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (taki lit.)
-    Am = 0.66;                                                  // | unitless| diffusion constant parameter, monomer (shanna lit.)
+    Dm0 = 2.36e-6;                                              // |  m^2/s  | diffusion c pre-exponential, monomer (shanna lit.)
+    Am = 0.66;                                                  // | unitless| diffusion constant parameter, monomer (bowman lit.)
 
     // bowman reaction parameters
     Rg       = 8.3145;                                          // | J/mol K | universal gas constant
     alpha_P  = 0.000075;                                        // |   1/K   | coefficent of thermal expansion, polymerization (taki + bowman lit.)
     alpha_M  = 0.0005;                                          // |   1/K   | coefficent of thermal expansion, monomer (taki + bowman lit.)
-    theta_gP = 236.75;                                          // |    K    | glass transition temperature, polymer UGAP (measured TgA)
-    theta_gM = 313.6;                                           // |    K    | glass transition temperature, monomer (bowman lit.)
+    theta_gP = 236.75;                                          // |    K    | glass transition temperature, polymer UGAP (DMA MEASURED)
+    theta_gM = 213.0;                                           // |    K    | glass transition temperature, monomer (bowman)
 
-    k_P0 = 1.145e2;                                             // |m^3/mol s| true kinetic constant, polymerization (bowman lit. 1)
-    E_P  = 10.23e3;                                             // |  J/mol  | activation energy, polymerization (bowman lit. 1)
-    A_Dp = 0.05;                                                // | unitless| diffusion parameter, polymerization (bowman lit.)
-    f_cp = 5.17e-2;                                             // | unitless| critical free volume, polymerization (bowman lit.)
 
-    k_T0 = 1.336e3;                                             // |m^3/mol s| true kinetic constant, termination (bowman lit.)
+    // k_P0 = 1.145e2;                                             // |m^3/mol s| true kinetic constant, polymerization (taki lit)
+    k_P0 = 1.6e3;                                               // |m^3/mol s| true kinetic constant, polymerization (bowman lit) / 
+    E_P  = 18.23e3;                                             // |  J/mol  | activation energy, polymerization (bowman lit. 1) /
+    A_Dp = 0.66;                                                // | unitless| diffusion parameter, polymerization (bowman lit.)
+    // f_cp = 5.17e-2;                                             // | unitless| critical free volume, polymerization (bowman lit.)
+    f_cp = 4.2e-2;                                              // | unitless| critical free volume, polymerization (SHANNA lit.)
+    
+
+    // k_T0 = 1.6e3;                                               // |m^3/mol s| true kinetic constant, termination (bowman lit.)/ 
+    k_T0 = 3.6e3;                                               // |m^3/mol s| true kinetic constant, termination (shanna lit.)/ 
     E_T  = 2.94e3;                                              // |  J/mol  | activation energy, termination (bowman lit.)
     A_Dt = 1.2;                                                 // | unitless| activation energy, termination (bowman lit. MODIFIED?)
-    f_ct = 5.81e-2;                                             // | unitless| critical free volume, termination (bowman lit.)
-    R_rd = 11.;                                                 // |m^3/mol  | reaction diffusion parameter (bowman lit.)
+    f_ct = 6.0e-2;                                              // | unitless| critical free volume, termination (bowman lit.) / 
+    R_rd = 11.;                                                 // |m^3/mol  | reaction diffusion parameter (taki lit.)
+    // R_rd = 4;                                                  // |m^3/mol  | reaction diffusion parameter (SHANNA lit.)
 
-    k_I0 = 4.8e-4;                                              // |m^3/mol s| primary radical rate constant (bowman lit.)
+    k_I0 = 5.1e-4;                                              // |m^3/mol s| primary radical rate constant (TRIAL/ERROR METHOD) / 
     E_I  = 18.23e3;                                             // |  J/mol  | activation energy, initiation (bowman lit.)
-    A_I = 0.66;                                                 // | unitless| diffusion parameter, initiation (bowman lit.)
+    A_I  = 0.66;                                                // | unitless| diffusion parameter, initiation (bowman lit.)
     f_ci = 0.042;                                               // | unitless| critical free volume, initiation (bowman lit.)
 
     // thermal properties

@@ -10,13 +10,13 @@ import os
 from matplotlib.ticker import ScalarFormatter
 
 #%%
-skip = 10
+skip = 1
 
 # central comuting 
 dir_path = '/home/brian/Documents/berkeley/ugap_simulation/output/python_plotting/uv_sweep'
 
 # macbook computing
-# dir_path = 
+dir_path = '/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/python_plotting/uv_sweep/'
 
 time            = []
 avg_tot_cPI     = []
@@ -153,10 +153,30 @@ plt.legend(fontsize=fs_-5)
 plt.savefig("uv_sweep/uv_sweep_figs/multi_cMdot.png")
 plt.show()
 
+# loop through all data and plot cM
+plt.figure(figsize=(10, 7.5)) 
+plt.title(r'Average cM', fontsize=fs_)
+plt.ylabel(r'cM ($mol/m^3/s$)', fontsize=fs_-5)
+plt.xlabel('time ($s$)', fontsize=fs_-5)
+plt.xticks(fontsize=fs_-5)
+plt.yticks(fontsize=fs_-5)
+
+for i in range(len(time)-bump):
+    time_plot       = time[i]
+    avg_tot_cM_plot = avg_tot_cM[i]
+
+    plt.scatter(time_plot, np.array(avg_tot_cM_plot), 
+                s=150, label='UV: {} $mW/cm^2$'.format(I_UV[i]))
+    
+    
+plt.legend(fontsize=fs_-5)
+plt.savefig("uv_sweep/uv_sweep_figs/multi_cM.png")
+plt.show()
+
 # loop through all data and plot k_t
 plt.figure(figsize=(10, 7.5))
-plt.title(r'Average k_t', fontsize=fs_)
-plt.ylabel(r'k_t ($m^3/mol/s$)', fontsize=fs_-5)
+plt.title(r'Average $k_t$', fontsize=fs_)
+plt.ylabel(r'$k_t$ ($m^3/mol/s$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
@@ -174,8 +194,8 @@ plt.show()
 
 # loop through all data and plot k_p
 plt.figure(figsize=(10, 7.5))
-plt.title(r'Average k_p', fontsize=fs_)
-plt.ylabel(r'k_p ($m^3/mol/s$)', fontsize=fs_-5)
+plt.title(r'Average $k_p$', fontsize=fs_)
+plt.ylabel(r'$k_p$ ($m^3/mol/s$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)

@@ -11,9 +11,9 @@ from matplotlib.ticker import ScalarFormatter
 
 
 # %%
-skip = 10
+skip = 1
 
-df = pd.read_csv("dt_21node_sweep/avg_concentration_simID_9.csv", sep=',')
+df = pd.read_csv("avg_concentration_simID_2.csv", sep=',')
 time = df['time'].tolist()[::skip]
 avg_top_cPI        = df[' avg_top_cPI'].tolist()[::skip]
 avg_tot_cPI        = df[' avg_tot_cPI'].tolist()[::skip]

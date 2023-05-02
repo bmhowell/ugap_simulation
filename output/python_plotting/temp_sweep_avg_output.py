@@ -10,7 +10,7 @@ import os
 from matplotlib.ticker import ScalarFormatter
 
 #%%
-skip = 10
+skip = 1
 
 # central comuting 
 # dir_path = '/home/brian/Documents/berkeley/ugap_simulation/output/python_plotting/temp_sweep'
@@ -175,8 +175,8 @@ plt.show()
 
 # loop through all data and plot k_t
 plt.figure(figsize=(10, 7.5))
-plt.title(r'Average k_t', fontsize=fs_)
-plt.ylabel(r'k_t ($m^3/mol/s$)', fontsize=fs_-5)
+plt.title(r'Average $k_t$', fontsize=fs_)
+plt.ylabel(r'$k_t$ ($m^3/mol/s$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
@@ -194,8 +194,8 @@ plt.show()
 
 # loop through all data and plot k_p
 plt.figure(figsize=(10, 7.5))
-plt.title(r'Average k_p', fontsize=fs_)
-plt.ylabel(r'k_p ($m^3/mol/s$)', fontsize=fs_-5)
+plt.title(r'Average $k_p$', fontsize=fs_)
+plt.ylabel(r'$k_p$ ($m^3/mol/s$)', fontsize=fs_-5)
 plt.xlabel('time ($s$)', fontsize=fs_-5)
 plt.xticks(fontsize=fs_-5)
 plt.yticks(fontsize=fs_-5)
