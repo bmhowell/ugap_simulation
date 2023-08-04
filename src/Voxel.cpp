@@ -1936,7 +1936,7 @@ void Voxel::Simulate(int method, int save_voxel){
 
         // display time
         timer += dt;
-        if ((t + 1) % 100 == 0){
+        if ((t + 1) % 1000 == 0){
             std::cout << "time: " << timer << " / " << t_final << std::endl;
             std::cout << "iteration: " << t + 1 << " / " << N_TIME_STEPS + 1 << std::endl << std::endl;
         }
