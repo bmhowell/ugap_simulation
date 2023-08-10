@@ -46,35 +46,18 @@ int main() {
     int   method     = 2;  // 0: forward euler | 1: backward euler | 2: trap
     int   sim_count  = 1;
 
-    for (int i = 0; i < num_sweeps; i++){
-
-        std::cout << " --- --------- Simulation: " << i << "----------- ---" << std::endl;
-        auto start = std::chrono::high_resolution_clock::now();
-
-        // SINGLE SIMULATION
-        Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[i], node_sweep[i], i, temp_amb[1]);
-
-        // UV SWEEP
-        // Voxel VoxelSystem1(I_UV[i], TFINAL, dt_sweep[2], node_sweep[2], i, temp_amb[1]);
-        
-        // CONVERGENCE SWEEP
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[sim_count], node_sweep[sim_count], sim_count, temp_amb[1]);
-
-        // TEMP SWEEP
-        // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[2], node_sweep[2], i, temp_amb[i]);
-
-        VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
-        VoxelSystem1.Density2File();
-
-        VoxelSystem1.Simulate(method, save_voxel);
-
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto duration = (std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count() / 1e6;
-        std::cout << " --- Simulation time: " << duration / 60 << "min ---" << std::endl;
-        std::cout << " --- ----------------------------- ---" << std::endl;
-
-        sim_count++; 
-    }
+    // SINGLE SIMULATION
+    auto start = std::chrono::high_resolution_clock::now();
+    // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[2], node_sweep[2], 2, temp_amb[1]);
+    Voxel VoxelSystem1(76.1647, TFINAL, dt_sweep[2], node_sweep[2], 2, 340.484, 24.0);
+    // VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
+    VoxelSystem1.ComputeParticles(5.51541e-5, 0.596627);
+    VoxelSystem1.Density2File();
+    VoxelSystem1.Simulate(method, save_voxel);
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = (std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count() / 1e6;
+    std::cout << " --- Simulation time: " << duration / 60 << "min ---" << std::endl;
+    std::cout << " --- ----------------------------- ---" << std::endl;
 
     std::cout << "\nHello, World!" << std::endl;
 

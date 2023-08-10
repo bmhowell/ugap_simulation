@@ -33,6 +33,7 @@ private:
     float total_time;                                       // | unitless|  total number of nodes
     float coord_map_const;
 
+    double uvt;                                             // |    s    |  uv exposure time
     double theta0;                                          // |    K    |  initial temperature
     int interfacial_nodes;                                  // |   ---   |  interfacial thickness parameter
     double len_block;                                       // |    m    |  sample length
@@ -147,7 +148,7 @@ private:
 
 public:
     /* overload constructor */
-    Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id, double temp_amb_ );
+    Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id, double temp_amb_, double uvt_);
 
     /* destructor */
     ~Voxel();

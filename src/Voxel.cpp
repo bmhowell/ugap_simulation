@@ -18,7 +18,7 @@
 
 // overload constructor
 //      - sets the input variables to whatever we pass through the class.
-Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id_, double temp_amb_){
+Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id_, double temp_amb_, double uvt_){
     std::cout << "Initializing parameters: " << std::endl;
 
     // MEMBER VARIABLES
@@ -29,6 +29,7 @@ Voxel::Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_i
     dt      = dt_;                                              // |    s    |  time step
     nodes   = nodes_;                                           // | unitless|  total number of nodes
     theta0  = temp_amb_;                                        // |    K    | initial and ambient temperature
+    uvt     = uvt_;                                             // |    s    | UV exposures time
 
     // set file path
     file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";   // MACBOOK PRO
@@ -1945,13 +1946,13 @@ void Voxel::Simulate(int method, int save_voxel){
 
         if (std::abs(std::floor(timer * 2) / 2 - timer) < dt || t == N_TIME_STEPS - 1){    
             if (save_voxel == 1){
-                Concentrations2File(0,
+                Concentrations2File(file_counter,
                                     c_PI,
                                     c_PIdot,
                                     c_Mdot,
                                     c_M,
                                     theta,
-                                    0);
+                                    timer);
             }
 
             AvgConcentrations2File(file_counter,

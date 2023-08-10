@@ -71,6 +71,16 @@
         "numbers": "cpp",
         "sstream": "cpp",
         "stack": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "charconv": "cpp",
+        "codecvt": "cpp",
+        "complex": "cpp",
+        "condition_variable": "cpp",
+        "format": "cpp",
+        "queue": "cpp",
+        "semaphore": "cpp",
+        "span": "cpp",
+        "thread": "cpp",
+        "__string": "cpp"
     }
 }

@@ -4,17 +4,17 @@ Simulation Configuration
 Initial concentrations (mol/m^3): 
 c_M0: 1568.9
 c_PI0: 146.409
-theta0 303.15
+theta0 340.484
 ==================================
 
 Numerical parameters
-h: 1.68e-05
-dt: 5.9e-05
-Diffusion CFL: 0.493339
-Thermal CFL: 2.16891e-06
+h: 4.2e-05
+dt: 0.00035
+Diffusion CFL: 0.468254
+Thermal CFL: 5.14657e-06
 
 ==================================
-solids loading: 0.518519
-particles_ind.size(): 68782
+solids loading: 0.212072
+particles_ind.size(): 1964
 
 ==================================
