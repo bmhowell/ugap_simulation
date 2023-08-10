@@ -241,6 +241,8 @@ void Voxel::ComputeParticles(double radius_1, double solids_loading) {
     double n_particle_nodes = std::round(N_VOL_NODES * solids_loading);
     double particle_distance, node_particle, rand_loc;
     int node;
+    rp = radius_1;
+    vp = solids_loading; 
 
     std::cout << "\n--------- ------- ---------" << std::endl;
     std::cout << "--- GENERATING PARTICLES ---" << std::endl;
@@ -1615,4 +1617,32 @@ void Voxel::Simulate(int method, int save_voxel){
             file_counter++;
         }
     }
+
+    double average_PI    = 0;
+    double average_PIdot = 0; 
+    double average_Mdot  = 0;  
+    double average_M     = 0;
+
+    for (int i = 0; i < N_VOL_NODES; i++){
+        average_PI   += c_PI[i];
+        average_PIdot += c_PIdot[i];
+        average_Mdot  += c_Mdot[i];
+        average_M    += c_M[i];
+    }
+
+    average_PI   /= N_VOL_NODES;
+    average_PIdot /= N_VOL_NODES;
+    average_Mdot  /= N_VOL_NODES;
+    average_M    /= N_VOL_NODES;
+
+    // compute weighted multi objective function
+    obj = 0.1 * average_PI + 0.25 * average_PIdot + 0.25 * average_Mdot + 0.4 * average_M;
+    std::cout << "--- SIMULATION COMPLETE ---" << std::endl;
+    std::cout << "obj = " << obj    << std::endl;
+    std::cout << "temp: " << theta0 << std::endl; 
+    std::cout << "uvt: " << uvt     << std::endl; 
+    std::cout << "I0: " << I0       << std::endl;
+    std::cout << "rp: " << rp       << std::endl;
+    std::cout << "vp: " << vp       << std::endl;
+
 }

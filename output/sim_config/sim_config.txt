@@ -14,7 +14,7 @@ Diffusion CFL: 0.491667
 Thermal CFL: 7.71986e-06
 
 ==================================
-solids loading: 0.11437
-particles_ind.size(): 386
+solids loading: 0.117037
+particles_ind.size(): 395
 
 ==================================

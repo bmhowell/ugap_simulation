@@ -147,6 +147,11 @@ private:
     std::ofstream print_avg_concentrations;
 
 public:
+    // optimization objective
+    double    obj;                                          // |   ---   |  objective function
+    double    vp;                                           // |   ---   |  volume fraction of particles
+    double    rp;                                           // |    m    |  radius of particles
+    
     /* overload constructor */
     Voxel(float intensity_, float t_final_, double dt_, int nodes_, int sim_id, double temp_amb_, double uvt_);
 
