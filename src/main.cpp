@@ -43,13 +43,13 @@ int main() {
 
 
     int   save_voxel = 0;  // 0: off | 1: on
-    int   method     = 0;  // 0: forward euler | 1: backward euler | 2: trap
+    int   method     = 2;  // 0: forward euler | 1: backward euler | 2: trap
     int   sim_count  = 1;
 
     // SINGLE SIMULATION
     auto start = std::chrono::high_resolution_clock::now();
     // Voxel VoxelSystem1(I_UV[2], TFINAL, dt_sweep[2], node_sweep[2], 2, temp_amb[1]);
-    Voxel VoxelSystem1(76.1647, TFINAL, dt_sweep[1], node_sweep[1], method, 340.484, 24.0);
+    Voxel VoxelSystem1(76.1647, TFINAL, dt_sweep[1], node_sweep[1], method, 340.484, 3.0);
     // VoxelSystem1.ComputeParticles(0.00084 / 10, 0.70);
     VoxelSystem1.ComputeParticles(5.51541e-5, 0.596627);
     VoxelSystem1.Density2File();

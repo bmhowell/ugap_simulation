@@ -387,17 +387,12 @@ void Voxel::ComputeRxnRateConstants() {
             // compute temperature dependent rate constants
             // bowman (1) equation 17
             k_p[i] = k_P0*exp(-E_P / Rg / theta[i]) / (1 + exp(A_Dp * (1/f_free_volume[i] - 1/f_cp)));
-            // k_p[i] = k_P0 / (1 + exp(A_Dp * (1/f_free_volume[i] - 1/f_cp)));
-            // k_i[i] = k_I0*exp(-E_I / Rg / theta[i]) / (1 + exp(A_I  * (1/f_free_volume[i] - 1/f_ci)));
             k_i[i] = k_I0; 
-            // k_i[i] = k_I0; // / (1 + exp(A_I  * (1/f_free_volume[i] - 1/f_ci))); // taki method 
 
             // bowman (1) equation 18
-
             k_tr   = R_rd * k_p[i] * c_M[i];
             denom  = (k_tr / (k_T0*exp(-E_T/Rg/theta[i])) + exp(-A_Dt*(1/f_free_volume[i] - 1/f_ct)));
             k_t[i] = k_T0*exp(-E_T/Rg/theta[i]) / (1+1/denom);
-            // k_t[i] = k_T0 / (1 + 1 / (R_rd * k_p[i] * c_M[i] / (k_T0) + exp(-A_Dt*(1/f_free_volume[i] - 1/f_ct))));
             
 
         }else{
@@ -682,10 +677,12 @@ void Voxel::SolveSystem(std::vector<double> &c_PI_next,
         psi = 1.; 
     }else if (method == 1){
         psi = 0.;
-    }else{
+    }else if (method == 2){
         psi = 0.5;
+    }else{
+        throw std::invalid_argument("ERROR: enter valid method 1-FEuler, 0-BEuler, 0.5-Trap  ---"); 
     }
-    
+
     // declare implicit vectors
     std::vector<double> c_PI_0(N_VOL_NODES),
                         c_PI_1(N_VOL_NODES),
@@ -1564,15 +1561,22 @@ void Voxel::Simulate(int method, int save_voxel){
     // begin time stepping
     double timer = 0.;
     int file_counter = 1;
+    double uv_light = I0;              // uv intensity  
     for (int t = 0; t < N_TIME_STEPS; t++) {
 
         total_time[t] = timer;
+        if (timer <= uvt){
+            uv_light = I0; 
+        }else{
+            uv_light = 0.;
+        }
 
         // compute energy intensity and reaction rate constants
         ComputeRxnRateConstants();
 
         // solve system of equations
-        SolveSystem(c_PI_next, c_PIdot_next, c_Mdot_next, c_M_next, theta_next, I0, dt, method);
+        
+        SolveSystem(c_PI_next, c_PIdot_next, c_Mdot_next, c_M_next, theta_next, uv_light, dt, method);
 
         c_PI    = c_PI_next;
         c_PIdot = c_PIdot_next;
