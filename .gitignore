@@ -1,5 +1,9 @@
 # Ignore build artifacts
 src/build/
+src/build1/
+src/build2/
+src/build3/
+src/build4/
 
 # Ignore log and data files
 *.log
