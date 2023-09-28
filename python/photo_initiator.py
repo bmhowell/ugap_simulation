@@ -14,14 +14,14 @@ import pandas as pd
 import copy
 
 # read data files
-df_cure_depth = pd.read_csv("data/curedepth.csv")
-cure_depth_measurement = np.asarray(df_cure_depth)
+# df_cure_depth = pd.read_csv("data/curedepth.csv")
+# cure_depth_measurement = np.asarray(df_cure_depth)
 
-df_dark_cure = pd.read_csv("data/darkcure.csv")
-dark_cure_measurement = np.asarray(df_dark_cure)
+# df_dark_cure = pd.read_csv("data/darkcure.csv")
+# dark_cure_measurement = np.asarray(df_dark_cure)
 
-depth = cure_depth_measurement[:, 0]  * 1e-6
-time_to_cure = cure_depth_measurement[:, 1]
+# depth = cure_depth_measurement[:, 0]  * 1e-6
+# time_to_cure = cure_depth_measurement[:, 1]
 
 
 # formulation - wt. %
