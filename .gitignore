@@ -10,6 +10,8 @@ output/density/
 output/concentration/
 output/sim_config/
 
+python/
+
 # Ignore log and data files
 *.log
 *.csv
