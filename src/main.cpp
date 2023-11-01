@@ -9,7 +9,8 @@
 #include "Voxel.h"
 
 int main() {
-    std::string file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";
+    // std::string file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";
+    std::string file_path = "/home/brian/Documents/brian/ugap_simulation/output/";
 
     // SINGLE SIMULATION
     auto start = std::chrono::high_resolution_clock::now();
@@ -51,7 +52,7 @@ int main() {
     start = std::chrono::high_resolution_clock::now();
     bopt opt_bopt;
     opt_bopt.temp = 303.15; 
-    opt_bopt.rp   = 0.0084 / 10;
+    opt_bopt.rp   = 0.00084 / 10;
     opt_bopt.vp   = 0.7;
     opt_bopt.uvi  = 10.;
     opt_bopt.uvt  = 30.;

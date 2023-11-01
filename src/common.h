@@ -5,8 +5,6 @@
 #ifndef SRC_COMMON_H_
 #define SRC_COMMON_H_
 
-#include <Eigen/Dense>
-#include <omp.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -15,7 +13,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <chrono>
-#define EIGEN_USE_BLAS
+#include <algorithm>
 
 
 // input/output BOpt data structure
