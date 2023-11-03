@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-project(ugapDiffusion)
+project(ugap_simulation)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(ugapDiffusion
+add_executable(ugap_simulation
                main.cpp
                Voxel.cpp
                Voxel.h
+               common.h
         )
