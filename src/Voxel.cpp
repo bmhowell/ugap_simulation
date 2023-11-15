@@ -126,8 +126,7 @@ Voxel::Voxel(float tf,
         z_increment += _h;
     }
 
-    /* initialize voxel values */
-
+    /* INITIALIZE VOXEL VALUES */
     // UV gradient
     std::fill_n(std::back_inserter(_uv_values),     _n_vol_nodes, 0.);
 
@@ -1026,8 +1025,6 @@ void Voxel::avgConcentrations2File(int counter,
     double avg_diff_theta_top = 0, avg_diff_theta = 0, avg_diff_theta_bot = 0; 
     
     // compute average top, total and bottom concentration, and then write to file
-    
-
     int nodes_resin = 0; 
     int nodes_top_resin = 0, nodes_bot_resin = 0; 
     for (int node = 0; node < _n_vol_nodes; node++){
@@ -1168,6 +1165,12 @@ void Voxel::avgConcentrations2File(int counter,
     _print_avg_concentrations << avg_diff_mdot_top  << ", " << avg_diff_mdot   << ", " << avg_diff_mdot_bot  << ", ";
     _print_avg_concentrations << avg_diff_m_top     << ", " << avg_diff_m      << ", " << avg_diff_m_bot     << ", ";
     _print_avg_concentrations << avg_diff_theta_top << ", " << avg_diff_theta  << ", " << avg_diff_theta_bot << std::endl;
+
+    // track average quantities for objective function
+    _c_PI_avg.push_back(avg_tot_cPI);
+    _c_PIdot_avg.push_back(avg_tot_cPIdot);
+    _c_Mdot_avg.push_back(avg_tot_cMdot);
+    _c_M_avg.push_back(avg_tot_cM);
 
     // _print_avg_concentrations << avg_diff_pdot << ", " << avg_diff_mdot << ", " << avg_diff_m << ", " << avg_diff_theta << std::endl;
     
@@ -1475,7 +1478,7 @@ void Voxel::nonBoundaries2File( int counter,
 }
 
 
-void Voxel::simulate(int method, int save_voxel){
+void Voxel::simulate(int method, int save_voxel, int obj_fn, double w[4]){
 
     // time discretization -> [0., dt, 2*dt, ..., T]
     int N_TIME_STEPS = _t_final / _dt;
@@ -1485,15 +1488,15 @@ void Voxel::simulate(int method, int save_voxel){
     if (!_multi_thread){
         std::cout << "=================================="                                     << std::endl;
         std::cout << "Simulation parameters"                                                  << std::endl;
-        std::cout << "_sim_id: "               << _sim_id                                       << std::endl;
-        std::cout << "Total time: "           << _t_final                                      << std::endl;
+        std::cout << "_sim_id:              " << _sim_id                                      << std::endl;
+        std::cout << "Total time:           " << _t_final                                     << std::endl;
         std::cout << "Number of time steps: " << N_TIME_STEPS                                 << std::endl;
-        std::cout << "Print iteration: "      << print_iter                                   << std::endl;
+        std::cout << "Print iteration:      " << print_iter                                   << std::endl;
         std::cout << "=================================="                                     << std::endl;
         std::cout << "Numerical parameters"                                                   << std::endl;
-        std::cout << "h: "   << _h                                                             << std::endl;
-        std::cout << "_dt: "  << _dt                                                            << std::endl;
-        std::cout << "Diffusion CFL: "   << _Dm0 * _dt / _h / _h                                  << std::endl;
+        std::cout << "h:   "   << _h                                                          << std::endl;
+        std::cout << "_dt: "   << _dt                                                         << std::endl;
+        std::cout << "Diffusion CFL: "   << _Dm0 * _dt / _h / _h                              << std::endl;
         std::cout << "Thermal CFL: "     << _dt * _K_thermal_shanna/ _h / _h / _rho_UGAP / _Cp_nacl << std::endl;
         std::cout << "\n=================================="                                   << std::endl;
     }
@@ -1587,37 +1590,74 @@ void Voxel::simulate(int method, int save_voxel){
         }
     }
 
-    double average_PI    = 0;
-    double average_PIdot = 0; 
-    double average_Mdot  = 0;  
-    double average_M     = 0;
+    double max_PI    = *std::max_element(_c_PI_avg.begin(), _c_PI_avg.end());
+    // double min_PI    = std::max(*std::min_element(_c_PI_avg.begin(), _c_PI_avg.end()), 0.0);
+    double max_PIdot = *std::max_element(_c_PIdot_avg.begin(), _c_PIdot_avg.end());
+    // double min_PIdot = std::max(*std::min_element(_c_PIdot_avg.begin(), _c_PIdot_avg.end()), 0.0);
+    double max_Mdot  = *std::max_element(_c_Mdot_avg.begin(), _c_Mdot_avg.end());
+    // double min_Mdot  = std::max(*std::min_element(_c_Mdot_avg.begin(), _c_Mdot_avg.end()), 0.0);
+    double max_M     = *std::max_element(_c_M_avg.begin(), _c_M_avg.end());
+    // double min_M     = std::max(*std::min_element(_c_M_avg.begin(), _c_M_avg.end()), 0.0);
 
-    for (int i = 0; i < _n_vol_nodes; i++){
-        average_PI   += _c_PI[i];
-        average_PIdot += _c_PIdot[i];
-        average_Mdot  += _c_Mdot[i];
-        average_M    += _c_M[i];
-    }
-
-    average_PI   /= _n_vol_nodes;
-    average_PIdot /= _n_vol_nodes;
-    average_Mdot  /= _n_vol_nodes;
-    average_M    /= _n_vol_nodes;
+    double average_PI_final    = _c_PI_avg[_c_PI_avg.size()-1];
+    double average_PIdot_final = _c_PIdot_avg[_c_PIdot_avg.size()-1]; 
+    double average_Mdot_final  = _c_Mdot_avg[_c_Mdot_avg.size()-1];  
+    double average_M_final     = _c_M_avg[_c_M_avg.size()-1];
 
     // compute weighted multi objective function
-    _obj = 0.1 * average_PI + 0.25 * average_PIdot + 0.25 * average_Mdot + 0.4 * average_M;
+    _obj_PI      = std::max(average_PI_final    / max_PI   , 0.0);
+    _obj_PIdot   = std::max(average_PIdot_final / max_PIdot, 0.0);
+    _obj_Mdot    = std::max(average_Mdot_final  / max_Mdot , 0.0);
+    _obj_M       = std::max(average_M_final     / max_M    , 0.0);
+    _obj_default = w[0]*_obj_PI + w[1]*_obj_PIdot + w[2]*_obj_Mdot + w[3]*_obj_M;
     
+    // switch _obj to match input obj_fn
+    switch (obj_fn){
+        case 1:
+            _obj = _obj_PI;
+            break;
+        case 2:
+            _obj = _obj_PIdot;
+            break;
+        case 3:
+            _obj = _obj_Mdot;
+            break;
+        case 4:
+            _obj = _obj_M;
+            break;
+        default:
+            _obj = _obj_default;
+            break;
+    }
+
     if (!_multi_thread){
         std::cout << "==================================" << std::endl;
         std::cout << "Simulation complete"                << std::endl;
         std::cout << "==================================" << std::endl;
         std::cout << "obj = " << _obj                     << std::endl;
         std::cout << "temp: " << _theta0                  << std::endl; 
-        std::cout << "uvt: " << _uvt                      << std::endl; 
-        std::cout << "I0: " << I0                         << std::endl;
-        std::cout << "_rp: " << _rp                       << std::endl;
-        std::cout << "_vp: " << _vp                       << std::endl;
+        std::cout << "uvt:  " << _uvt                     << std::endl; 
+        std::cout << "I0:   " << I0                       << std::endl;
+        std::cout << "_rp:  " << _rp                      << std::endl;
+        std::cout << "_vp:  " << _vp                      << std::endl;
+        std::cout << "==================================" << std::endl;
     }
+}
+
+double Voxel::getObjPI() {
+    return _obj_PI;
+}
+
+double Voxel::getObjPIDot() {
+    return _obj_PIdot;
+}
+
+double Voxel::getObjMDot() {
+    return _obj_Mdot;
+}
+
+double Voxel::getObjM() {
+    return _obj_M;
 }
 
 double Voxel::getObjective() {
