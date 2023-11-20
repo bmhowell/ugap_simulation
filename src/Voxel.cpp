@@ -1488,15 +1488,15 @@ void Voxel::simulate(int method, int save_voxel, int obj_fn, double w[4]){
     if (!_multi_thread){
         std::cout << "=================================="                                     << std::endl;
         std::cout << "Simulation parameters"                                                  << std::endl;
-        std::cout << "_sim_id:              " << _sim_id                                      << std::endl;
-        std::cout << "Total time:           " << _t_final                                     << std::endl;
+        std::cout << "_sim_id: "               << _sim_id                                       << std::endl;
+        std::cout << "Total time: "           << _t_final                                      << std::endl;
         std::cout << "Number of time steps: " << N_TIME_STEPS                                 << std::endl;
-        std::cout << "Print iteration:      " << print_iter                                   << std::endl;
+        std::cout << "Print iteration: "      << print_iter                                   << std::endl;
         std::cout << "=================================="                                     << std::endl;
         std::cout << "Numerical parameters"                                                   << std::endl;
-        std::cout << "h:   "   << _h                                                          << std::endl;
-        std::cout << "_dt: "   << _dt                                                         << std::endl;
-        std::cout << "Diffusion CFL: "   << _Dm0 * _dt / _h / _h                              << std::endl;
+        std::cout << "h: "   << _h                                                             << std::endl;
+        std::cout << "_dt: "  << _dt                                                            << std::endl;
+        std::cout << "Diffusion CFL: "   << _Dm0 * _dt / _h / _h                                  << std::endl;
         std::cout << "Thermal CFL: "     << _dt * _K_thermal_shanna/ _h / _h / _rho_UGAP / _Cp_nacl << std::endl;
         std::cout << "\n=================================="                                   << std::endl;
     }

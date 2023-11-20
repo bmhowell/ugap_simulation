@@ -9,8 +9,11 @@
 #include "Voxel.h"
 
 int main() {
-    std::string file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";
-    // std::string file_path = "/home/brian/Documents/brian/ugap_simulation/output/";
+    // std::string file_path = "/Users/brianhowell/Desktop/Berkeley/MSOL/ugap_simulation/output/";
+    std::string file_path = "/home/brian/Documents/brian/ugap_simulation/output/";
+
+    double pareto_weights[4]  = {3.56574286e-09, 2.42560512e-03, 2.80839829e-01, 7.14916061e-01};
+    int obj_fn = 5;
 
     // SINGLE SIMULATION
     bopt default_bopt;
@@ -21,31 +24,34 @@ int main() {
     default_bopt.uvt  = 30.;
     
     sim default_sim;
-    default_sim.time_stepping = 0;
+    default_sim.time_stepping = 6;
+
+
+
+    
     default_sim.update_time_stepping_values();
 
     const bool mthread = true; 
     int   save_voxel = 0;  // 0: off | 1: on
-    int   obj_fn     = 5;  // 1: pi | 2: pidot | 3: mdot | 4: m | 5: multi
-    
-    // init guess of weights for multi-obj fn
-    // double w[4] = {0.1, 0.25, 0.25, 0.4};
-    double pareto_w[4]  = {3.56574286e-09, 2.42560512e-03, 2.80839829e-01, 7.14916061e-01};
 
     auto start = std::chrono::high_resolution_clock::now();
     std::cout << "===== RUNNING DEFAULT PARAMETERS =====" << std::endl;
-    Voxel VoxelSystem1(default_sim.tfinal,          // tot sim time
-                       default_sim.dt,              // time step
-                       default_sim.node,            // num nodes
-                       default_sim.time_stepping,   // sim id
-                       default_bopt.temp,           // amb temp
-                       default_bopt.uvi,            // uv intensity
-                       default_bopt.uvt,            // uv exposure time
+    Voxel VoxelSystem1(default_sim.tfinal,  // tot sim time
+                       default_sim.dt,      // time step
+                       default_sim.node,    // num nodes
+                       default_sim.time_stepping,  // sim id
+                       default_bopt.temp,   // amb temp
+                       default_bopt.uvi,    // uv intensity
+                       default_bopt.uvt,    // uv exposure time
                        file_path,
                        mthread);
     VoxelSystem1.computeParticles(default_bopt.rp, default_bopt.vp);
     VoxelSystem1.density2File();
-    VoxelSystem1.simulate(default_sim.method, save_voxel, obj_fn, pareto_w);
+    VoxelSystem1.simulate(default_sim.method,    // time stepping scheme
+                    save_voxel,             // save voxel values
+                    obj_fn,                 // objective function
+                    pareto_weights          // pareto weights
+                    );
     double default_objective = VoxelSystem1.getObjective();
     std::cout << "default_objective: " << default_objective << std::endl;
     auto stop = std::chrono::high_resolution_clock::now();
@@ -56,27 +62,30 @@ int main() {
 
     std::cout << "\n===== RUNNING OPT PARAMETERS =====" << std::endl;
     start = std::chrono::high_resolution_clock::now();
+    save_voxel = 1;
     bopt opt_bopt;
-    //347.743 1.42249e-05    0.541723      2.1895      12.036   0.0206577
-    opt_bopt.temp = 318.061; 
-    opt_bopt.rp   = 1.8027e-05;
-    opt_bopt.vp   = 0.655117;
-    opt_bopt.uvi  = 69.2125;
-    opt_bopt.uvt  = 23.6246;
+    opt_bopt.temp = 320.113; 
+    opt_bopt.rp   = 7.27612e-05;
+    opt_bopt.vp   = 0.517619;
+    opt_bopt.uvi  = 32.7876;
+    opt_bopt.uvt  = 6.03151;
 
     Voxel VoxelSystem2(default_sim.tfinal,  // tot sim time
                        default_sim.dt,      // time step
                        default_sim.node,    // num nodes
-                       default_sim.method,  // sim id
+                       default_sim.time_stepping,  // sim id
                        opt_bopt.temp,   // amb temp
                        opt_bopt.uvi,    // uv intensity
                        opt_bopt.uvt,    // uv exposure time
                        file_path,
                        mthread);
-
     VoxelSystem2.computeParticles(opt_bopt.rp, opt_bopt.vp);
     VoxelSystem2.density2File();
-    VoxelSystem2.simulate(default_sim.method, save_voxel, obj_fn, pareto_w);
+    VoxelSystem2.simulate(default_sim.method,    // time stepping scheme
+                    save_voxel,             // save voxel values
+                    obj_fn,                 // objective function
+                    pareto_weights          // pareto weights
+                    );
 
     double opt_objective = VoxelSystem2.getObjective();
     std::cout << "opt_objective: " << opt_objective << std::endl;
@@ -88,7 +97,7 @@ int main() {
     std::cout << " --- ----------------------------- ---" << std::endl;
 
     std::cout << "\n==== ANALYSIS ====" << std::endl;
-    std::cout << "pcnt improvement: " << 100 * (default_objective - opt_objective) / default_objective << "%" << std::endl;
+    std::cout << "pcnt improvement: " << 100 * (default_objective - opt_objective) / default_objective << std::endl;
 
     return 0;
 }

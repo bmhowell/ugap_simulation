@@ -133,7 +133,7 @@ class Voxel {
     std::vector<double> _c_Mdot_avg;
     std::vector<double> _c_M_avg;
     std::vector<double> _theta_avg;
-
+    
     // data outputs
     std::ofstream _print_sim_config; 
     std::ofstream _print_density;
