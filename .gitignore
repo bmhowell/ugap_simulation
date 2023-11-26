@@ -5,10 +5,10 @@ src/build2/
 src/build3/
 src/build4/
 
-output/python_plotting/
-output/density/
-output/concentration/
-output/sim_config/
+#output/python_plotting/
+#output/density/
+#output/concentration/
+#output/sim_config/
 
 python/
 
